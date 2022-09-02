@@ -19,9 +19,15 @@ def protected_div(x0, x1, symbol=False):
         if isinstance(x1, sp.Float) or isinstance(x1, float):
             return 0. if abs(x1) <= 1e-5 else x0 / x1
         return x0 / x1
-    if torch.cuda.is_available():
+    condition = torch.tensor(1e-5)
+    result = torch.tensor(0.)
+    if x0.is_cuda is True or x1.is_cuda is True:
         x1 = x1.cuda()
-    return torch.where(torch.abs(x1) <= torch.tensor(1e-5), torch.tensor(0.), torch.div(x0, x1))
+        x0 = x0.cuda()
+        condition = condition.cuda()
+        result = result.cuda()
+
+    return torch.where(torch.abs(x1) <= condition, result, torch.div(x0, x1))
 
     # if symbol:
     #     if isinstance(x1, float):
@@ -240,7 +246,7 @@ def closing_pt_func(*args, params=None):
     k_size, = params
     if len(args[0].shape) != 0:
         kernel = torch.ones(k_size, k_size)
-        if torch.cuda.is_available():
+        if args[0].is_cuda is True:
             kernel = kernel.cuda()
         return K.morphology.closing(args[0], kernel)
     else:

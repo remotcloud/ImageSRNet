@@ -116,7 +116,11 @@ class ConvNet(nn.Module):
         # 第二层卷积，两层特征图都存储到了 feature_map1,feature map2 中
         feature_map2 = F.relu(self.conv2(x))
         return (feature_map1, feature_map2)
-
+    def testGpu(self,x):
+        target = torch.rand_like(x)
+        target = target.cpu()
+        y = x*target
+        return y
 if __name__ == '__main__':
     '''______________________________开始获取数据的过程______________________________'''
     # 加载MNIST数据 MNIST数据属于 torchvision 包自带的数据,可以直接接调用

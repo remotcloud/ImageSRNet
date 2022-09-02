@@ -107,6 +107,8 @@ class ImageCGP(nn.Module):
                     # get the functional value
                     operants = reversed([value_stack.pop() for _ in range(func.arity)])
                     value = func(*operants, feature_infos=feature_infos, params=func_params)
+                    if input_image.is_cuda:
+                        value = value.cuda()
                 node_idx_stack.append(node_idx)
                 value_stack.append(value)
             output_value = value_stack.pop()
