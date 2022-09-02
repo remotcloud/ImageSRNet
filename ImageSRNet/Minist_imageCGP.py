@@ -52,14 +52,14 @@ results_dir = '../Result/CGP/AllImage'
 
 def loss_function(X, y, model):
 
-    predictY = model(X)
+
     try:
+        predictY = model(X)
         lossSet = []
         criterion = nn.L1Loss()
         predictY.requires_grad = True
-        loss = criterion(predictY, y)
-        loss1 = criterion(predictY[0], y[0])
 
+        loss = criterion(predictY, y)
         loss.backward()
 
     except Exception as e:
