@@ -113,8 +113,10 @@ class ImageCGP(nn.Module):
             if len(output_value.shape) == 0:
                 output_value = output_value.repeat(input_image.shape[0], 1, self.output_size[0], self.output_size[1])
             outputs.append(output_value)
-        return torch.cat(outputs, dim=1)
-
+        if torch.cuda.is_available():
+            return torch.cat(outputs, dim=1).cuda()
+        else:
+            return torch.cat(outputs, dim=1)
     def mutate(self, prob):
         # apply point mutation
         mutated_genes = self.genes[:]

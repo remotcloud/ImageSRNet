@@ -39,13 +39,15 @@ def loss_function(X, y, model):
 
 
     try:
+        if torch.cuda.is_available():
+            model = model.cuda()
         predictY = model(X)
         lossSet = []
         criterion = nn.L1Loss()
         predictY.requires_grad = True
 
         loss = criterion(predictY, y)
-        loss.backward()
+        #loss.backward()
 
     except Exception as e:
         traceback.print_exc()
@@ -139,6 +141,8 @@ if __name__ == '__main__':
     fname = 'ministCnn'
     model.load_state_dict(torch.load(f"ModelSave/{fname}.pth"))
 
+    if torch.cuda.is_available():
+        model = model.cuda()
     '''                                         
     将测试数据分成两部分，一部分作为校验数据，一部分作为测试数据。
     校验数据用于检测模型是否过拟合并调整参数，测试数据检验整个模型的工作
@@ -175,8 +179,10 @@ if __name__ == '__main__':
     # 种群相关设置
     populationSize = 200
     for batch_idx, (data, target) in enumerate(train_loader):  # 针对容器中的每一个批进行循环
-        data = data
-        output,target = model(data)
+        if torch.cuda.is_available():
+            data = data.cuda()
+            output,target = model(data)
+
         for item in range(0, itemNum):
             # 每次种群演化中每代适应度被保存的路径
             filedir = os.path.join(results_dir, "Fitness")

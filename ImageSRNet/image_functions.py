@@ -19,7 +19,8 @@ def protected_div(x0, x1, symbol=False):
         if isinstance(x1, sp.Float) or isinstance(x1, float):
             return 0. if abs(x1) <= 1e-5 else x0 / x1
         return x0 / x1
-
+    if torch.cuda.is_available():
+        x1 = x1.cuda()
     return torch.where(torch.abs(x1) <= torch.tensor(1e-5), torch.tensor(0.), torch.div(x0, x1))
 
     # if symbol:
@@ -206,6 +207,8 @@ def dilation_pt_func(*args, params=None):
     k_size, = params
     if len(args[0].shape) != 0:
         kernel = torch.ones(k_size, k_size)
+        if torch.cuda.is_available():
+            kernel = kernel.cuda()
         return K.morphology.dilation(args[0], kernel)
     else:
         return args[0]
@@ -215,6 +218,8 @@ def erosion_pt_func(*args, params=None):
     k_size, = params
     if len(args[0].shape) != 0:
         kernel = torch.ones(k_size, k_size)
+        if torch.cuda.is_available():
+            kernel = kernel.cuda()
         return K.morphology.erosion(args[0], kernel)
     else:
         return args[0]
@@ -224,6 +229,8 @@ def opening_pt_func(*args, params=None):
     k_size, = params
     if len(args[0].shape) != 0:
         kernel = torch.ones(k_size, k_size)
+        if torch.cuda.is_available():
+            kernel = kernel.cuda()
         return K.morphology.opening(args[0], kernel)
     else:
         return args[0]
@@ -233,6 +240,8 @@ def closing_pt_func(*args, params=None):
     k_size, = params
     if len(args[0].shape) != 0:
         kernel = torch.ones(k_size, k_size)
+        if torch.cuda.is_available():
+            kernel = kernel.cuda()
         return K.morphology.closing(args[0], kernel)
     else:
         return args[0]
@@ -242,6 +251,8 @@ def gradient_pt_func(*args, params=None):
     k_size, = params
     if len(args[0].shape) != 0:
         kernel = torch.ones(k_size, k_size)
+        if torch.cuda.is_available():
+            kernel = kernel.cuda()
         return K.morphology.gradient(args[0], kernel)
     else:
         return args[0]
@@ -251,6 +262,8 @@ def top_hat_pt_func(*args, params=None):
     k_size, = params
     if len(args[0].shape) != 0:
         kernel = torch.ones(k_size, k_size)
+        if torch.cuda.is_available():
+            kernel = kernel.cuda()
         return K.morphology.top_hat(args[0], kernel)
     else:
         return args[0]
@@ -260,6 +273,8 @@ def bottom_hat_pt_func(*args, params=None):
     k_size, = params
     if len(args[0].shape) != 0:
         kernel = torch.ones(k_size, k_size)
+        if torch.cuda.is_available():
+            kernel = kernel.cuda()
         return K.morphology.bottom_hat(args[0], kernel)
     else:
         return args[0]
