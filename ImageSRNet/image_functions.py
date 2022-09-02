@@ -137,7 +137,7 @@ cos = BaseFunction('Cos', 1, torch.cos, sp.cos)
 tan = BaseFunction('Tan', 1, torch.tan, sp.tan)
 # this is for when the output is the original input image
 idtf = BaseFunction('Identify', 1, identify, identify)
-delta = BaseFunction('Delta',1,)
+#delta = BaseFunction('Delta',1,)
 
 def image_operator_expr(*args, params=None, func_name=None):
     if isinstance(args[0], float):
