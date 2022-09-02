@@ -15,7 +15,7 @@ import json
 import _pickle as pickle
 
 if __name__ == "__main__":
-    fn = f'CGPIndiva/0bestIndiv.pkl'
+    fn = f'CGPIndiva/1bestIndiv.pkl'
     with open(fn,'rb') as f:
         indiv = pickle.load(f)
     batch_size = 60

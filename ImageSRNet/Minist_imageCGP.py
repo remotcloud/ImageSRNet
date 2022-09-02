@@ -53,8 +53,11 @@ def loss_function(X, y, model):
 
     predictY = model(X)
     try:
-        criterion = nn.CrossEntropyLoss()
+        criterion = nn.L1Loss()
+        predictY.requires_grad = True
         loss = criterion(predictY, y)
+        loss.backward()
+
     except:
         predictY = predictY.reshape(-1)
         # print("predictY="+str(predictY))
