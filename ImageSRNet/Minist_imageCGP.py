@@ -30,25 +30,10 @@ params = {
 image_size = 28  # 图像的总尺寸为 28x28
 num_classes = 10  # 标签的种类数
 num_epochs = 20  # 训练的总猜环周期
-batch_size = 64  # 一个批次的大小，64张图片
-
-
-
-# reshape(a, b, *input_size)a表示batch数目，b表示通道数
-# orignalX = np.loadtxt('../Dataset/seismic.csv', dtype=float, delimiter=',').reshape(1, 1, *input_size)
-# orignalY = np.loadtxt('../Dataset/impedance.csv', dtype=float, delimiter=',').reshape(1, 1, *input_size)
-#
-#
-# X = torch.tensor(orignalX, dtype=torch.float)
-# Y = torch.tensor(orignalY, dtype=torch.float)
-
-#print(X.shape, Y.shape)
-
+batch_size = 640  # 一个批次的大小，64张图片
 
 results_dir = '../Result/CGP/AllImage'
-# 处理orignalY,去掉多余的两个维度，以便画图
-#orignalY=orignalY.squeeze()
-# orignalY=orignalY.numpy()
+
 
 def loss_function(X, y, model):
 
