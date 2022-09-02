@@ -1,4 +1,5 @@
 import os
+import traceback
 
 import numpy as np
 import torch
@@ -53,12 +54,16 @@ def loss_function(X, y, model):
 
     predictY = model(X)
     try:
+        lossSet = []
         criterion = nn.L1Loss()
         predictY.requires_grad = True
         loss = criterion(predictY, y)
+        loss1 = criterion(predictY[0], y[0])
+
         loss.backward()
 
-    except:
+    except Exception as e:
+        traceback.print_exc()
         predictY = predictY.reshape(-1)
         # print("predictY="+str(predictY))
         loss = ((predictY-y.reshape(-1))**2).sum().mean()
