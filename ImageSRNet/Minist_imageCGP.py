@@ -248,14 +248,5 @@ if __name__ == '__main__':
             with open(fn, 'wb') as f:  # open file with write-mode
                 picklestring = pickle.dump(bestIndividual, f)  # serialize and save objec
             print("program save OK!")
-            y = bestIndividual(data).squeeze()
-            y = y.numpy()
-            print(y.shape)
-            filePredictImp = os.path.join(results_dir, "predictImp")
-            if not os.path.exists(filePredictImp):
-                os.makedirs(filePredictImp)
-            filePredictImp = os.path.join(filePredictImp, str(item) + ".txt")
-
-
             plt.close()
             print(str(item) + "is Over!!!")
