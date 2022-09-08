@@ -224,7 +224,7 @@ def erosion_pt_func(*args, params=None):
     k_size, = params
     if len(args[0].shape) != 0:
         kernel = torch.ones(k_size, k_size)
-        if torch.cuda.is_available():
+        if args[0].is_cuda:
             kernel = kernel.cuda()
         return K.morphology.erosion(args[0], kernel)
     else:
@@ -235,7 +235,7 @@ def opening_pt_func(*args, params=None):
     k_size, = params
     if len(args[0].shape) != 0:
         kernel = torch.ones(k_size, k_size)
-        if torch.cuda.is_available():
+        if args[0].is_cuda:
             kernel = kernel.cuda()
         return K.morphology.opening(args[0], kernel)
     else:
@@ -246,7 +246,7 @@ def closing_pt_func(*args, params=None):
     k_size, = params
     if len(args[0].shape) != 0:
         kernel = torch.ones(k_size, k_size)
-        if args[0].is_cuda is True:
+        if args[0].is_cuda:
             kernel = kernel.cuda()
         return K.morphology.closing(args[0], kernel)
     else:
@@ -257,7 +257,7 @@ def gradient_pt_func(*args, params=None):
     k_size, = params
     if len(args[0].shape) != 0:
         kernel = torch.ones(k_size, k_size)
-        if torch.cuda.is_available():
+        if args[0].is_cuda:
             kernel = kernel.cuda()
         return K.morphology.gradient(args[0], kernel)
     else:
@@ -279,7 +279,7 @@ def bottom_hat_pt_func(*args, params=None):
     k_size, = params
     if len(args[0].shape) != 0:
         kernel = torch.ones(k_size, k_size)
-        if torch.cuda.is_available():
+        if args[0].is_cuda:
             kernel = kernel.cuda()
         return K.morphology.bottom_hat(args[0], kernel)
     else:
