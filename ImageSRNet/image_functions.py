@@ -213,7 +213,7 @@ def dilation_pt_func(*args, params=None):
     k_size, = params
     if len(args[0].shape) != 0:
         kernel = torch.ones(k_size, k_size)
-        if torch.cuda.is_available():
+        if args[0].is_cuda:
             kernel = kernel.cuda()
         return K.morphology.dilation(args[0], kernel)
     else:
@@ -268,7 +268,7 @@ def top_hat_pt_func(*args, params=None):
     k_size, = params
     if len(args[0].shape) != 0:
         kernel = torch.ones(k_size, k_size)
-        if torch.cuda.is_available():
+        if args[0].is_cuda:
             kernel = kernel.cuda()
         return K.morphology.top_hat(args[0], kernel)
     else:
