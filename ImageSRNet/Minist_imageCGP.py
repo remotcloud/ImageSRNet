@@ -177,7 +177,7 @@ if __name__ == '__main__':
     # 最大的演化次数
     itemNum=2
     # 最大的代数
-    genNum=500
+    genNum=600
     # 种群相关设置
     populationSize = 300
 
