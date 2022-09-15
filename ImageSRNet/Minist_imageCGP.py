@@ -214,7 +214,7 @@ if __name__ == '__main__':
             newPopulation = [i for i in range(0, populationSize)]
             # 对于每一代种群
             for gen in range(0, genNum):
-                print("gen=" + str(gen))
+
                 if gen != 0:
                     # 新种群成为下一代种群
                     for i in range(0, populationSize):
@@ -225,6 +225,7 @@ if __name__ == '__main__':
                         with open(file, "a") as f:
                             f.write(str(gen) + " " + str(bestIndividual.fitness) + "\n")
                         print(str(bestIndividual.fitness))
+                        print("gen=" + str(gen))
                 if gen < (genNum - 1):
                     # 将最优个体添加至下一代种群
                     newPopulation[0] = bestIndividual
