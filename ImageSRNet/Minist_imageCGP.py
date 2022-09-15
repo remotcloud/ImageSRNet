@@ -56,7 +56,7 @@ num_classes = 10  # 标签的种类数
 num_epochs = 20  # 训练的总猜环周期
 batch_size = 160  # 一个批次的大小，64张图片
 
-results_dir = '../Result/CGP/AllImage'
+results_dir = '../result/CGP/AllImage'
 
 depth = [4, 8]
 class ConvNet(nn.Module):
@@ -173,7 +173,7 @@ if __name__ == '__main__':
                                               shuffle=False,
                                               sampler=sampler_test)
 
-    n_input, n_output, input_size, output_size = 4,8, (14, 14), (14,14)
+    n_input, n_output, input_size, output_size = 4,1, (14, 14), (14,14)
     # 最大的演化次数
     itemNum=2
     # 最大的代数
@@ -186,7 +186,7 @@ if __name__ == '__main__':
             data = data.cuda()
             nndata = model(data)
             input = nndata[2]
-            target = nndata[3]
+            target = nndata[3][:,0:1]
         for item in range(0, itemNum):
             # 每次种群演化中每代适应度被保存的路径
             filedir = os.path.join(results_dir, "Fitness")
@@ -221,8 +221,10 @@ if __name__ == '__main__':
                         icgpPopulation[i] = newPopulation[i]
                     # 寻找当代最优个体，并且记录了该个体
                     bestIndividual = min(icgpPopulation, key=lambda x: x.fitness)
-                    with open(file, "a") as f:
-                        f.write(str(gen) + " " + str(bestIndividual.fitness) + "\n")
+                    if gen == genNum or gen %30 ==0:
+                        with open(file, "a") as f:
+                            f.write(str(gen) + " " + str(bestIndividual.fitness) + "\n")
+                        print(str(bestIndividual.fitness))
                 if gen < (genNum - 1):
                     # 将最优个体添加至下一代种群
                     newPopulation[0] = bestIndividual
