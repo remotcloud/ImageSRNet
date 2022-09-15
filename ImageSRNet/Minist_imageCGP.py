@@ -1,3 +1,4 @@
+import math
 import os
 import traceback
 
@@ -16,28 +17,7 @@ from sr_objs import ImageCGP
 import _pickle as pickle
 import json
 
-def loss_function(X, y, model):
 
-
-    try:
-        if torch.cuda.is_available():
-            model = model.cuda()
-        predictY = model(X)
-
-        # criterion = nn.L1Loss
-        # loss = criterion(predictY, y)
-
-        predictY = predictY.reshape(-1)
-        loss = ((predictY - y.reshape(-1)) ** 2).mean()
-        #loss.backward()
-
-    except Exception as e:
-        traceback.print_exc()
-        predictY = predictY.reshape(-1)
-        # print("predictY="+str(predictY))
-        loss = ((predictY - y.reshape(-1)) ** 2).mean()
-        # print("loss="+str(loss))
-    return loss
 
 params = {
         'n_population': 100,
@@ -54,7 +34,7 @@ params = {
 image_size = 28  # 图像的总尺寸为 28x28
 num_classes = 10  # 标签的种类数
 num_epochs = 20  # 训练的总猜环周期
-batch_size = 640  # 一个批次的大小，64张图片
+
 
 results_dir = '../result/CGP/AllImage'
 
@@ -73,7 +53,7 @@ class ConvNet(nn.Module):
         self.conv2 = nn.Conv2d(depth[0], depth[1], 5, padding=2)  # 输出通道为depth[1]，窗口为5，padding为2
         # 一个线性连接层，输入尺寸为最后一层立方体的线性平铺，输出层 512个节点
         self.fc1 = nn.Linear(image_size // 4 * image_size // 4 * depth[1], 512)
-        nn.Conv2d
+        # nn.Conv2d
         self.fc2 = nn.Linear(512, num_classes)  # 最后一层线性分类单元，输入为 512，输出为要做分类的类别数
 
     def forward(self, x):  # 该函数完成神经网络真正的前向运算，在这里把各个组件进行实际的拼装
@@ -122,6 +102,28 @@ class ConvNet(nn.Module):
         target = target.cpu()
         y = x*target
         return y
+def loss_function(X, y, model):
+
+
+    try:
+        if torch.cuda.is_available():
+            model = model.cuda()
+        predictY = model(X)
+
+        criterion = nn.L1Loss()
+        loss = criterion(predictY, y)
+
+        # predictY = predictY.reshape(-1)
+        # loss = ((predictY - y.reshape(-1)) ** 2).mean()
+        #loss.backward()
+
+    except Exception as e:
+        traceback.print_exc()
+        predictY = predictY.reshape(-1)
+        # print("predictY="+str(predictY))
+        loss = ((predictY - y.reshape(-1)) ** 2).mean()
+        # print("loss="+str(loss))
+    return loss
 def evolution(evlutionParam,input,target,file):
     populationSize = n_input = evlutionParam['populationSize']
     n_input=evlutionParam['n_input']
@@ -176,6 +178,70 @@ def evolution(evlutionParam,input,target,file):
                 else:
                     newPopulation[i] = bestIndividual
     return bestIndividual
+def evolutionNAddLamda(evlutionParam,input,target,file):
+    populationSize = n_input = evlutionParam['populationSize']
+    n_input=evlutionParam['n_input']
+    n_output =evlutionParam['n_output']
+    input_size =evlutionParam['input_size']
+    output_size= evlutionParam['output_size']
+    params = evlutionParam['params']
+    genNum = evlutionParam['genNum']
+    lamda = evlutionParam['lamda']
+    mutate_prob = evlutionParam['mutate_prob']
+    icgpPopulation = []
+    for i in range(0, populationSize):
+        icgp = ImageCGP(n_input, n_output, input_size, output_size, params)
+        icgpPopulation.append(icgp)
+    # 计算种群中的每个个体的适应度函数值
+    for i in range(0, populationSize):
+        indiv = icgpPopulation[i]
+        try:
+            indiv.fitness = loss_function(input, target, indiv)
+        except:
+            indiv.fitness = loss_function(input, target, indiv)
+    # 寻找当代最优个体，并且记录了该个体
+    bestIndividual = min(icgpPopulation, key=lambda x: x.fitness)
+
+    with open(file, "a") as f:
+        f.write(str(0) + " " + str(bestIndividual.fitness) + "\n")
+    # 下一代种群
+    newPopulation = [i for i in range(0, populationSize)]
+    # 对于每一代种群
+    for gen in range(0, genNum):
+
+        if gen != 0:
+            # 新种群成为下一代种群
+            # for i in range(0, populationSize):
+            #     icgpPopulation[i] = newPopulation[i]
+            icgpPopulation = newPopulation
+            # 寻找当代最优个体，并且记录了该个体
+            bestIndividual = min(icgpPopulation, key=lambda x: x.fitness)
+            if gen == genNum or gen % 30 == 0:
+                with open(file, "a") as f:
+                    f.write(str(gen) + " " + str(bestIndividual.fitness) + "\n")
+                print(str(bestIndividual.fitness))
+                print("gen=" + str(gen))
+        if gen < (genNum - 1):
+            # 将最优个体添加至下一代种群
+            newPopulation[0] = bestIndividual
+            # 变异产生新个体
+            for i in range(1, math.ceil(populationSize*lamda)):
+                mutated_icgp = bestIndividual.mutate(mutate_prob)
+                # 计算新个体的适应度函数值
+                mutated_icgp.fitness = loss_function(input, target, mutated_icgp)
+                # 在变异产生的新个体和父代个体中选择最优秀的个体保存下来
+                if mutated_icgp.fitness <= bestIndividual.fitness:
+                    newPopulation[i] = mutated_icgp
+                else:
+                    newPopulation[i] = bestIndividual
+            for j in range(math.ceil(populationSize*lamda),populationSize):
+                new_icgp = ImageCGP(n_input, n_output, input_size, output_size, params)
+                # 计算新个体的适应度函数值
+                new_icgp.fitness = loss_function(input, target, new_icgp)
+                # 在变异产生的新个体和父代个体中选择最优秀的个体保存下来
+                newPopulation[j] = new_icgp
+
+    return bestIndividual
 if __name__ == '__main__':
     '''______________________________开始获取数据的过程______________________________'''
     # 加载MNIST数据 MNIST数据属于 torchvision 包自带的数据,可以直接接调用
@@ -189,6 +255,7 @@ if __name__ == '__main__':
     test_dataset = dsets.MNIST(root='./data',
                                train=False,
                                transform=transforms.ToTensor())
+    batch_size = 320
     # 训练数据集的加载器，自动将数据切分成批，顺序随机打乱
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                                batch_size=batch_size,
@@ -230,7 +297,7 @@ if __name__ == '__main__':
     # 最大的演化次数
     itemNum=2
     # 最大的代数
-    genNum=600
+    genNum=300
     # 种群相关设置
     populationSize= 300
 
@@ -242,8 +309,11 @@ if __name__ == '__main__':
         'n_input':4,
         'n_output':1,
         'input_size': (14, 14),
-        'output_size': (14, 14)
+        'output_size': (14, 14),
+        'lamda':0.8,
+        'mutate_prob':0.4
     }
+
     for batch_idx, (data, target) in enumerate(train_loader):  # 针对容器中的每一个批进行循环
         if torch.cuda.is_available():
             data = data.cuda()
@@ -260,54 +330,8 @@ if __name__ == '__main__':
             if not os.path.exists(filedir):
                 os.makedirs(filedir)
             file = os.path.join(filedir, str(item) + ".txt")
-            bestIndividual = evolution(evolutionParam,input,target,file)
-            # # 创建当代种群
-            # icgpPopulation = []
-            # for i in range(0, populationSize):
-            #     icgp = ImageCGP(n_input, n_output, input_size, output_size, params)
-            #     icgpPopulation.append(icgp)
-            # # 计算种群中的每个个体的适应度函数值
-            # for i in range(0, populationSize):
-            #     indiv = icgpPopulation[i]
-            #     try:
-            #         indiv.fitness = loss_function(input, target, indiv)
-            #     except:
-            #         indiv.fitness = loss_function(input, target, indiv)
-            # # 寻找当代最优个体，并且记录了该个体
-            # bestIndividual = min(icgpPopulation, key=lambda x: x.fitness)
-            #
-            # with open(file, "a") as f:
-            #     f.write(str(0) + " " + str(bestIndividual.fitness) + "\n")
-            # # 下一代种群
-            # newPopulation = [i for i in range(0, populationSize)]
-            # # 对于每一代种群
-            # for gen in range(0, genNum):
-            #
-            #     if gen != 0:
-            #         # 新种群成为下一代种群
-            #         for i in range(0, populationSize):
-            #             icgpPopulation[i] = newPopulation[i]
-            #         # 寻找当代最优个体，并且记录了该个体
-            #         bestIndividual = min(icgpPopulation, key=lambda x: x.fitness)
-            #         if gen == genNum or gen %30 ==0:
-            #             with open(file, "a") as f:
-            #                 f.write(str(gen) + " " + str(bestIndividual.fitness) + "\n")
-            #             print(str(bestIndividual.fitness))
-            #             print("gen=" + str(gen))
-            #     if gen < (genNum - 1):
-            #         # 将最优个体添加至下一代种群
-            #         newPopulation[0] = bestIndividual
-            #         # 变异产生新个体
-            #         for i in range(1, populationSize):
-            #             mutated_icgp = bestIndividual.mutate(0.4)
-            #             # 计算新个体的适应度函数值
-            #             mutated_icgp.fitness = loss_function(input, target, mutated_icgp)
-            #             # 在变异产生的新个体和父代个体中选择最优秀的个体保存下来
-            #             if mutated_icgp.fitness <= bestIndividual.fitness:
-            #                 newPopulation[i] = mutated_icgp
-            #             else:
-            #                 newPopulation[i] = bestIndividual
-
+            # bestIndividual = evolution(evolutionParam,input,target,file)
+            bestIndividual = evolutionNAddLamda(evolutionParam, input, target, file)
             # 保存此次种群演化最优的个体的表达式
             # 保存此次种群演化最优的个体的相关信息(表达式)
             fileExpression = os.path.join(results_dir, "Expression.txt")
