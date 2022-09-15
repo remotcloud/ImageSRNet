@@ -122,7 +122,60 @@ class ConvNet(nn.Module):
         target = target.cpu()
         y = x*target
         return y
+def evolution(evlutionParam,input,target,file):
+    populationSize = n_input = evlutionParam['populationSize']
+    n_input=evlutionParam['n_input']
+    n_output =evlutionParam['n_output']
+    input_size =evlutionParam['input_size']
+    output_size= evlutionParam['output_size']
+    params = evlutionParam['params']
+    genNum = evlutionParam['genNum']
+    icgpPopulation = []
+    for i in range(0, populationSize):
+        icgp = ImageCGP(n_input, n_output, input_size, output_size, params)
+        icgpPopulation.append(icgp)
+    # 计算种群中的每个个体的适应度函数值
+    for i in range(0, populationSize):
+        indiv = icgpPopulation[i]
+        try:
+            indiv.fitness = loss_function(input, target, indiv)
+        except:
+            indiv.fitness = loss_function(input, target, indiv)
+    # 寻找当代最优个体，并且记录了该个体
+    bestIndividual = min(icgpPopulation, key=lambda x: x.fitness)
 
+    with open(file, "a") as f:
+        f.write(str(0) + " " + str(bestIndividual.fitness) + "\n")
+    # 下一代种群
+    newPopulation = [i for i in range(0, populationSize)]
+    # 对于每一代种群
+    for gen in range(0, genNum):
+
+        if gen != 0:
+            # 新种群成为下一代种群
+            for i in range(0, populationSize):
+                icgpPopulation[i] = newPopulation[i]
+            # 寻找当代最优个体，并且记录了该个体
+            bestIndividual = min(icgpPopulation, key=lambda x: x.fitness)
+            if gen == genNum or gen % 30 == 0:
+                with open(file, "a") as f:
+                    f.write(str(gen) + " " + str(bestIndividual.fitness) + "\n")
+                print(str(bestIndividual.fitness))
+                print("gen=" + str(gen))
+        if gen < (genNum - 1):
+            # 将最优个体添加至下一代种群
+            newPopulation[0] = bestIndividual
+            # 变异产生新个体
+            for i in range(1, populationSize):
+                mutated_icgp = bestIndividual.mutate(0.4)
+                # 计算新个体的适应度函数值
+                mutated_icgp.fitness = loss_function(input, target, mutated_icgp)
+                # 在变异产生的新个体和父代个体中选择最优秀的个体保存下来
+                if mutated_icgp.fitness <= bestIndividual.fitness:
+                    newPopulation[i] = mutated_icgp
+                else:
+                    newPopulation[i] = bestIndividual
+    return bestIndividual
 if __name__ == '__main__':
     '''______________________________开始获取数据的过程______________________________'''
     # 加载MNIST数据 MNIST数据属于 torchvision 包自带的数据,可以直接接调用
@@ -179,66 +232,81 @@ if __name__ == '__main__':
     # 最大的代数
     genNum=600
     # 种群相关设置
-    populationSize = 300
+    populationSize= 300
 
+    evolutionParam = {
+        'params': params,
+        'batch_size': 640,
+        'populationSize': 300,
+        'genNum': 600,
+        'n_input':4,
+        'n_output':1,
+        'input_size': (14, 14),
+        'output_size': (14, 14)
+    }
     for batch_idx, (data, target) in enumerate(train_loader):  # 针对容器中的每一个批进行循环
         if torch.cuda.is_available():
             data = data.cuda()
             nndata = model(data)
             input = nndata[2]
             target = nndata[3][:,0:1]
+        else:
+            nndata = model(data)
+            input = nndata[2]
+            target = nndata[3][:, 0:1]
         for item in range(0, itemNum):
             # 每次种群演化中每代适应度被保存的路径
             filedir = os.path.join(results_dir, "Fitness")
             if not os.path.exists(filedir):
                 os.makedirs(filedir)
             file = os.path.join(filedir, str(item) + ".txt")
-            # 创建当代种群
-            icgpPopulation = []
-            for i in range(0, populationSize):
-                icgp = ImageCGP(n_input, n_output, input_size, output_size, params)
-                icgpPopulation.append(icgp)
-            # 计算种群中的每个个体的适应度函数值
-            for i in range(0, populationSize):
-                indiv = icgpPopulation[i]
-                try:
-                    indiv.fitness = loss_function(input, target, indiv)
-                except:
-                    indiv.fitness = loss_function(input, target, indiv)
-            # 寻找当代最优个体，并且记录了该个体
-            bestIndividual = min(icgpPopulation, key=lambda x: x.fitness)
-
-            with open(file, "a") as f:
-                f.write(str(0) + " " + str(bestIndividual.fitness) + "\n")
-            # 下一代种群
-            newPopulation = [i for i in range(0, populationSize)]
-            # 对于每一代种群
-            for gen in range(0, genNum):
-
-                if gen != 0:
-                    # 新种群成为下一代种群
-                    for i in range(0, populationSize):
-                        icgpPopulation[i] = newPopulation[i]
-                    # 寻找当代最优个体，并且记录了该个体
-                    bestIndividual = min(icgpPopulation, key=lambda x: x.fitness)
-                    if gen == genNum or gen %30 ==0:
-                        with open(file, "a") as f:
-                            f.write(str(gen) + " " + str(bestIndividual.fitness) + "\n")
-                        print(str(bestIndividual.fitness))
-                        print("gen=" + str(gen))
-                if gen < (genNum - 1):
-                    # 将最优个体添加至下一代种群
-                    newPopulation[0] = bestIndividual
-                    # 变异产生新个体
-                    for i in range(1, populationSize):
-                        mutated_icgp = bestIndividual.mutate(0.4)
-                        # 计算新个体的适应度函数值
-                        mutated_icgp.fitness = loss_function(input, target, mutated_icgp)
-                        # 在变异产生的新个体和父代个体中选择最优秀的个体保存下来
-                        if mutated_icgp.fitness <= bestIndividual.fitness:
-                            newPopulation[i] = mutated_icgp
-                        else:
-                            newPopulation[i] = bestIndividual
+            bestIndividual = evolution(evolutionParam,input,target,file)
+            # # 创建当代种群
+            # icgpPopulation = []
+            # for i in range(0, populationSize):
+            #     icgp = ImageCGP(n_input, n_output, input_size, output_size, params)
+            #     icgpPopulation.append(icgp)
+            # # 计算种群中的每个个体的适应度函数值
+            # for i in range(0, populationSize):
+            #     indiv = icgpPopulation[i]
+            #     try:
+            #         indiv.fitness = loss_function(input, target, indiv)
+            #     except:
+            #         indiv.fitness = loss_function(input, target, indiv)
+            # # 寻找当代最优个体，并且记录了该个体
+            # bestIndividual = min(icgpPopulation, key=lambda x: x.fitness)
+            #
+            # with open(file, "a") as f:
+            #     f.write(str(0) + " " + str(bestIndividual.fitness) + "\n")
+            # # 下一代种群
+            # newPopulation = [i for i in range(0, populationSize)]
+            # # 对于每一代种群
+            # for gen in range(0, genNum):
+            #
+            #     if gen != 0:
+            #         # 新种群成为下一代种群
+            #         for i in range(0, populationSize):
+            #             icgpPopulation[i] = newPopulation[i]
+            #         # 寻找当代最优个体，并且记录了该个体
+            #         bestIndividual = min(icgpPopulation, key=lambda x: x.fitness)
+            #         if gen == genNum or gen %30 ==0:
+            #             with open(file, "a") as f:
+            #                 f.write(str(gen) + " " + str(bestIndividual.fitness) + "\n")
+            #             print(str(bestIndividual.fitness))
+            #             print("gen=" + str(gen))
+            #     if gen < (genNum - 1):
+            #         # 将最优个体添加至下一代种群
+            #         newPopulation[0] = bestIndividual
+            #         # 变异产生新个体
+            #         for i in range(1, populationSize):
+            #             mutated_icgp = bestIndividual.mutate(0.4)
+            #             # 计算新个体的适应度函数值
+            #             mutated_icgp.fitness = loss_function(input, target, mutated_icgp)
+            #             # 在变异产生的新个体和父代个体中选择最优秀的个体保存下来
+            #             if mutated_icgp.fitness <= bestIndividual.fitness:
+            #                 newPopulation[i] = mutated_icgp
+            #             else:
+            #                 newPopulation[i] = bestIndividual
 
             # 保存此次种群演化最优的个体的表达式
             # 保存此次种群演化最优的个体的相关信息(表达式)
@@ -252,5 +320,4 @@ if __name__ == '__main__':
             with open(fn, 'wb') as f:  # open file with write-mode
                 picklestring = pickle.dump(bestIndividual, f)  # serialize and save objec
             print("program save OK!")
-            plt.close()
             print(str(item) + "is Over!!!")
