@@ -1,3 +1,4 @@
+import math
 import os
 
 import numpy as np
@@ -77,13 +78,13 @@ class resultDeal(object):
         out = indiv(input)
         fig = plt.figure(figsize=(10, 7))
         for i in range(out.shape[1]):
-            plt.subplot(2, out.shape[1]/2, i + 1)
+            plt.subplot(2, math.ceil(out.shape[1]/2), i + 1)
             plt.imshow(out[0][i, ...].cpu().data.numpy())
         # plt.colorbar(shrink=0.5)
 
         fig = plt.figure(figsize=(10, 7))
         for i in range(out.shape[1]):
-            plt.subplot(2, int(out.shape[1] / 2), i + 1)
+            plt.subplot(2, math.ceil(out.shape[1]/2), i + 1)
             plt.imshow(self.dataSet[3][0][i, ...].cpu().data.numpy())
         plt.show()
     def getResultJson(self):
