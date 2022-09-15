@@ -54,7 +54,7 @@ params = {
 image_size = 28  # 图像的总尺寸为 28x28
 num_classes = 10  # 标签的种类数
 num_epochs = 20  # 训练的总猜环周期
-batch_size = 160  # 一个批次的大小，64张图片
+batch_size = 640  # 一个批次的大小，64张图片
 
 results_dir = '../result/CGP/AllImage'
 
@@ -177,9 +177,9 @@ if __name__ == '__main__':
     # 最大的演化次数
     itemNum=2
     # 最大的代数
-    genNum=100
+    genNum=500
     # 种群相关设置
-    populationSize = 200
+    populationSize = 300
 
     for batch_idx, (data, target) in enumerate(train_loader):  # 针对容器中的每一个批进行循环
         if torch.cuda.is_available():
