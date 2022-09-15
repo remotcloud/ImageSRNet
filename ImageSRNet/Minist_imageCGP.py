@@ -15,6 +15,30 @@ from sr_objs import ImageCGP
 
 import _pickle as pickle
 import json
+
+def loss_function(X, y, model):
+
+
+    try:
+        if torch.cuda.is_available():
+            model = model.cuda()
+        predictY = model(X)
+
+        # criterion = nn.L1Loss
+        # loss = criterion(predictY, y)
+
+        predictY = predictY.reshape(-1)
+        loss = ((predictY - y.reshape(-1)) ** 2).mean()
+        #loss.backward()
+
+    except Exception as e:
+        traceback.print_exc()
+        predictY = predictY.reshape(-1)
+        # print("predictY="+str(predictY))
+        loss = ((predictY - y.reshape(-1)) ** 2).mean()
+        # print("loss="+str(loss))
+    return loss
+
 params = {
         'n_population': 100,
         'n_generation': 5000,
@@ -30,32 +54,9 @@ params = {
 image_size = 28  # 图像的总尺寸为 28x28
 num_classes = 10  # 标签的种类数
 num_epochs = 20  # 训练的总猜环周期
-batch_size = 640  # 一个批次的大小，64张图片
+batch_size = 160  # 一个批次的大小，64张图片
 
 results_dir = '../Result/CGP/AllImage'
-
-
-def loss_function(X, y, model):
-
-
-    try:
-        if torch.cuda.is_available():
-            model = model.cuda()
-        predictY = model(X)
-        lossSet = []
-        criterion = nn.L1Loss()
-        predictY.requires_grad = True
-
-        loss = criterion(predictY, y)
-        #loss.backward()
-
-    except Exception as e:
-        traceback.print_exc()
-        predictY = predictY.reshape(-1)
-        # print("predictY="+str(predictY))
-        loss = ((predictY-y.reshape(-1))**2).sum().mean()
-        # print("loss="+str(loss))
-    return loss
 
 depth = [4, 8]
 class ConvNet(nn.Module):
@@ -81,14 +82,14 @@ class ConvNet(nn.Module):
         x1 = F.relu(x)  # 激活函数用ReLU，防止过拟合
         # x的尺寸：(batch_size, num_filters, image_width, image_height)
 
-        x = self.pool(x1)  # 第二层池化，将图片变小
+        layer2input = self.pool(x1)  # 第二层池化，将图片变小
         # x的尺寸：(batch_size, depth[0], image_width/ 2， image_height/2)
 
-        x = self.conv2(x)  # 第三层又是卷积，窗口为5，输入输出通道分列为depth[o]=4,depth[1]=8
-        x = F.relu(x)  # 非线性函数
+        x = self.conv2(layer2input)  # 第三层又是卷积，窗口为5，输入输出通道分列为depth[o]=4,depth[1]=8
+        layer2output = F.relu(x)  # 非线性函数
         # x的尺寸：(batch_size, depth[1], image_width/2, image_height/2)
 
-        x = self.pool(x)  # 第四层池化，将图片缩小到原来的 1/4
+        x = self.pool(layer2output)  # 第四层池化，将图片缩小到原来的 1/4
         # x的尺寸：(batch_size, depth[1], image_width/ 4, image_height/4)
 
         # 将立体的特征图 tensor 压成一个一维的向量
@@ -107,7 +108,7 @@ class ConvNet(nn.Module):
 
         # 输出层为 log_Softmax，即概率对数值 log(p(×))。采用log_softmax可以使后面的交叉熵计算更快
         x = F.log_softmax(x, dim=1)
-        return x,x1
+        return x,x1,layer2input,layer2output
 
     def retrieve_features(self, x):
         # 该函数用于提取卷积神经网络的特征图，返回feature_map1,feature_map2为前两层卷积层的特征图
@@ -121,6 +122,7 @@ class ConvNet(nn.Module):
         target = target.cpu()
         y = x*target
         return y
+
 if __name__ == '__main__':
     '''______________________________开始获取数据的过程______________________________'''
     # 加载MNIST数据 MNIST数据属于 torchvision 包自带的数据,可以直接接调用
@@ -170,23 +172,21 @@ if __name__ == '__main__':
                                               batch_size=batch_size,
                                               shuffle=False,
                                               sampler=sampler_test)
-    # X = np.loadtxt('../Dataset/seismic.csv', dtype=float, delimiter=',')
-    # print(X[:,0])
-    # print(X[:,2])
-    # Y = np.loadtxt('../Dataset/impedance.csv', dtype=float, delimiter=',')
-    # 原来的
-    n_input, n_output, input_size, output_size = 1, 4, (28, 28), (28,28)
+
+    n_input, n_output, input_size, output_size = 4,8, (14, 14), (14,14)
     # 最大的演化次数
     itemNum=2
     # 最大的代数
     genNum=100
     # 种群相关设置
     populationSize = 200
+
     for batch_idx, (data, target) in enumerate(train_loader):  # 针对容器中的每一个批进行循环
         if torch.cuda.is_available():
             data = data.cuda()
-            output,target = model(data)
-
+            nndata = model(data)
+            input = nndata[2]
+            target = nndata[3]
         for item in range(0, itemNum):
             # 每次种群演化中每代适应度被保存的路径
             filedir = os.path.join(results_dir, "Fitness")
@@ -202,16 +202,17 @@ if __name__ == '__main__':
             for i in range(0, populationSize):
                 indiv = icgpPopulation[i]
                 try:
-                    indiv.fitness = loss_function(data, target, indiv)
+                    indiv.fitness = loss_function(input, target, indiv)
                 except:
-                    indiv.fitness = loss_function(data, target, indiv)
+                    indiv.fitness = loss_function(input, target, indiv)
             # 寻找当代最优个体，并且记录了该个体
             bestIndividual = min(icgpPopulation, key=lambda x: x.fitness)
+
             with open(file, "a") as f:
-                    f.write(str(0) + " " + str(bestIndividual.fitness) + "\n")
+                f.write(str(0) + " " + str(bestIndividual.fitness) + "\n")
             # 下一代种群
             newPopulation = [i for i in range(0, populationSize)]
-            #对于每一代种群
+            # 对于每一代种群
             for gen in range(0, genNum):
                 print("gen=" + str(gen))
                 if gen != 0:
@@ -229,7 +230,7 @@ if __name__ == '__main__':
                     for i in range(1, populationSize):
                         mutated_icgp = bestIndividual.mutate(0.4)
                         # 计算新个体的适应度函数值
-                        mutated_icgp.fitness = loss_function(data, target, mutated_icgp)
+                        mutated_icgp.fitness = loss_function(input, target, mutated_icgp)
                         # 在变异产生的新个体和父代个体中选择最优秀的个体保存下来
                         if mutated_icgp.fitness <= bestIndividual.fitness:
                             newPopulation[i] = mutated_icgp
