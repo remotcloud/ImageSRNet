@@ -19,8 +19,8 @@ from Minist_imageCGP import ConvNet
 class resultDeal(object):
     def __init__(self,bestIndividual):
         self.bestIndividual = bestIndividual
-        self.dataSet = self.__getDataSet()
-    def __getDataSet(self,batch_size = 100):
+        self.dataSet = self.__getDataSet(batch_size=3000)
+    def __getDataSet(self,batch_size = 640):
         train_dataset = dsets.MNIST(root='./data',  # 文件存放路径
                                     train=True,  # 提取训练集
                                     # 将图像转化为 Tensor，在加载數据时，就可以对图像做预处理
@@ -40,29 +40,7 @@ class resultDeal(object):
 
         if torch.cuda.is_available():
             model = model.cuda()
-        '''                                         
-        将测试数据分成两部分，一部分作为校验数据，一部分作为测试数据。
-        校验数据用于检测模型是否过拟合并调整参数，测试数据检验整个模型的工作
-        '''
-        # 首先，定义下标数组 indices，它相当于对所有test_dataset 中数据的编码
-        # 然后，定义下标 indices_val 表示校验集数据的下标，indices_test 表示测试集的下标
 
-        indices = range(len(test_dataset))
-        indices_val = indices[: 64]
-        indices_test = indices[64:128]
-        # 根据下标构造两个数据集的SubsetRandomSampler 来样器，它会对下标进行来样
-        sampler_val = torch.utils.data.sampler.SubsetRandomSampler(indices_val)
-        sampler_test = torch.utils.data.sampler.SubsetRandomSampler(indices_test)
-        # 根据两个采样器定义加载器
-        # 注意将sampler_val 和sampler_test 分别賦值给了 validation_loader 和 test_loader
-        validation_loader = torch.utils.data.DataLoader(dataset=test_dataset,
-                                                        batch_size=batch_size,
-                                                        shuffle=False,
-                                                        sampler=sampler_val)
-        test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
-                                                  batch_size=batch_size,
-                                                  shuffle=False,
-                                                  sampler=sampler_test)
 
         for batch_idx, (data, target) in enumerate(train_loader):  # 针对容器中的每一个批进行循环
             if torch.cuda.is_available():
@@ -77,15 +55,24 @@ class resultDeal(object):
         input = self.dataSet[2][idx].unsqueeze(0)
         out = indiv(input)
         fig = plt.figure(figsize=(10, 7))
+        fig.suptitle('input')
+        for i in range(input.shape[1]):
+            plt.subplot(2, math.ceil( input.shape[1]/ 2), i + 1)
+            plt.imshow(input[0][i, ...].cpu().data.numpy())
+
+        fig = plt.figure(figsize=(10, 7))
+        fig.suptitle('out')
         for i in range(out.shape[1]):
             plt.subplot(2, math.ceil(out.shape[1]/2), i + 1)
             plt.imshow(out[0][i, ...].cpu().data.numpy())
         # plt.colorbar(shrink=0.5)
 
+        # plt.show()
         fig = plt.figure(figsize=(10, 7))
+        fig.suptitle('origin out')
         for i in range(out.shape[1]):
             plt.subplot(2, math.ceil(out.shape[1]/2), i + 1)
-            plt.imshow(self.dataSet[3][0][i, ...].cpu().data.numpy())
+            plt.imshow(self.dataSet[3][idx][i, ...].cpu().data.numpy())
         plt.show()
     def getResultJson(self):
         bestExpression = self.bestIndividual.get_expressions()
@@ -100,11 +87,12 @@ class resultDeal(object):
             json.dump(log_dict, f, indent=4)
         print("Save json ok!")
 if __name__ == "__main__":
-    fn = f'CGPIndiva/0bestIndiv.pkl'
+    fn = f'CGPIndiva/3bestIndiv.pkl'
     with open(fn,'rb') as f:
         indiv = pickle.load(f)
     result = resultDeal(indiv)
-    result.getResultImageComp(70)
+
+    result.getResultImageComp(10)
     result.getResultJson()
 
 
