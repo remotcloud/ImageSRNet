@@ -1,9 +1,13 @@
 {
     "Expression": {
-        "exp(0)": "sqrt(Opening^{(3,)}(1.0/sqrt(((IMG_0)_{((0, 0), (28, 28))}))))",
-        "exp(1)": "Gradient^{(5,)}(((IMG_0)_{((0, 0), (28, 28))})) + MeanBlur^{(3,)}(4*((IMG_0)_{((0, 0), (28, 28))})**2)",
-        "exp(2)": "4*((IMG_0)_{((0, 0), (28, 28))})**2",
-        "exp(3)": "UnsharpMask^{(5, 0.6)}(Gradient^{(7,)}(((IMG_0)_{((0, 0), (28, 28))})))"
+        "exp(0)": "1.0",
+        "exp(1)": "MedianBlur^{(3,)}(SpatialGradientY(((IMG_2)_{((0, 0), (14, 14))}) - Erosion^{(5,)}(((IMG_3)_{((0, 0), (14, 14))}))))",
+        "exp(2)": "((IMG_1)_{((0, 0), (14, 14))}) + MeanBlur^{(5,)}(((IMG_0)_{((0, 0), (14, 14))}))",
+        "exp(3)": "Closing^{(5,)}(((IMG_1)_{((0, 0), (14, 14))}))",
+        "exp(4)": "((IMG_1)_{((0, 0), (14, 14))})",
+        "exp(5)": "((IMG_1)_{((0, 0), (14, 14))}) - Sobel(0.296636641025543*((IMG_0)_{((0, 0), (14, 14))}))",
+        "exp(6)": "((IMG_1)_{((0, 0), (14, 14))}) + MeanBlur^{(5,)}(((IMG_0)_{((0, 0), (14, 14))}))",
+        "exp(7)": "SpatialGradientX(Canny(SpatialGradientY(BottomHat^{(7,)}(((IMG_3)_{((0, 0), (14, 14))})))))"
     },
-    "fitness": "tensor(136612.7969, requires_grad=True)"
+    "fitness": "tensor(6.8859, device='cuda:0', requires_grad=True)"
 }
