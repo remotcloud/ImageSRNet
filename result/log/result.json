@@ -1,6 +1,0 @@
-{
-    "Expression": {
-        "exp(0)": "(((IMG_0)_{((0, 0), (14, 14))})**2 + Erosion^{(3,)}(SpatialGradientY(((IMG_1)_{((0, 0), (14, 14))}))))**2"
-    },
-    "fitness": "tensor(0.9957, device='cuda:0', requires_grad=True)"
-}
