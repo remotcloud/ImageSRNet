@@ -87,8 +87,8 @@ class resultDeal(object):
         for row in range(rowNum):
             for col in range(colNum):
                 cols[row][col].imshow(layer2_data_input_for_image[col, ...].cpu().data.numpy())
-        fig = plt.figure(figsize=(10, 7))
 
+        fig = plt.figure(figsize=(10, 7))
         fig.suptitle('outOfSrNet')
         for i in range(Layer2SrOutData.shape[1]):
             plt.subplot(2, math.ceil(Layer2SrOutData.shape[1]/2), i + 1)
