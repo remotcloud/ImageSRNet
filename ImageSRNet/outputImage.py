@@ -59,29 +59,46 @@ class resultDeal(object):
         with open(fn, 'wb') as f:
             pickle.dump(nndata,f)
         return nndata
-    def getResultImageComp(self,idx):
-        input = self.dataSet[2][idx].unsqueeze(0)
-        out = indiv(input)
-        fig = plt.figure(figsize=(10, 7))
-        fig.suptitle('input')
-        for i in range(input.shape[1]):
-            plt.subplot(2, math.ceil( input.shape[1]/ 2), i + 1)
-            plt.imshow(input[0][i, ...].cpu().data.numpy())
+    def getResultImageComp(self, batch_num):
+        """
+
+        :param batch_num:
+        :return:
+        """
+        batch_num = 1
+        layer2InputData = self.dataSet[2]  # layer1CnnInput,layer1CnnOut,layer2nnInput,layer2CnnOutput
+        #求出神经网络的输出
+        layer2DataOneBatchForNN = layer2InputData[batch_num-1:batch_num]  # 神经网络需要维度[1,4,14,14]
+        Layer2SrOutData = indiv(layer2DataOneBatchForNN)
+
+        layer2_cnn_out_data_forImage = self.dataSet[3][batch_num-1]
+        layer2_data_input_for_image = layer2InputData[batch_num-1]  # [4,14,14]
+        # fig = plt.figure(figsize=(10, 7))
+        # fig.suptitle('input')
+        # for i in range(layer2DataForImage.shape[0]):
+        #     plt.subplot(2, math.ceil( layer2DataOneBatch.shape[1]/ 2), i + 1)
+        #     plt.imshow(layer2Data[
+        #     batch_num][i, ...].cpu().data.numpy())
+        rowNum = 2
+        colNum = math.ceil(layer2_data_input_for_image.shape[0]/rowNum)
+
+        fig, cols = plt.subplots(rowNum, colNum)
+        fig.suptitle("layer2Input")
+        for row in range(rowNum):
+            for col in range(colNum):
+                cols[row][col].imshow(layer2_data_input_for_image[col, ...].cpu().data.numpy())
 
         fig = plt.figure(figsize=(10, 7))
-        fig.suptitle('out')
-        for i in range(out.shape[1]):
-            plt.subplot(2, math.ceil(out.shape[1]/2), i + 1)
-            plt.imshow(out[0][i, ...].cpu().data.numpy())
+        fig.suptitle('outOfSrNet')
+        for i in range(Layer2SrOutData.shape[1]):
+            plt.subplot(2, math.ceil(Layer2SrOutData.shape[1]/2), i + 1)
+            plt.imshow(Layer2SrOutData[0][i, ...].cpu().data.numpy())
 
-        # plt.colorbar(shrink=0.5)
-
-        # plt.show()
         fig = plt.figure(figsize=(10, 7))
-        fig.suptitle('origin out')
-        for i in range(out.shape[1]):
-            plt.subplot(2, math.ceil(out.shape[1]/2), i + 1)
-            plt.imshow(self.dataSet[3][idx][i, ...].cpu().data.numpy())
+        fig.suptitle('outOfNet')
+        for i in range(layer2_cnn_out_data_forImage.shape[0]):
+            plt.subplot(2, math.ceil(layer2_cnn_out_data_forImage.shape[0]/2), i + 1)
+            plt.imshow(layer2_cnn_out_data_forImage[i,...].cpu().data.numpy())
         plt.show()
 
 
@@ -119,7 +136,7 @@ if __name__ == "__main__":
         indiv = pickle.load(f)
     result = resultDeal(indiv)
 
-    result.getResultImageComp2(81)
+    result.getResultImageComp(81)
     result.getResultJson()
 
 
