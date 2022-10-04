@@ -131,7 +131,7 @@ class resultDeal(object):
             json.dump(log_dict, f, indent=4)
         print("Save json ok!")
 if __name__ == "__main__":
-    fn = f'CGPIndiva/3bestIndiv.pkl'
+    fn = f'CGPIndiva/0bestIndiv.pkl'
     with open(fn,'rb') as f:
         indiv = pickle.load(f)
     result = resultDeal(indiv)
