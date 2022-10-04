@@ -315,7 +315,7 @@ if __name__ == '__main__':
         'lamda':0.8,
         'mutate_prob':0.4
     }
-
+    batch_num = 0
     for batch_idx, (data, target) in enumerate(train_loader):  # 针对容器中的每一个批进行循环
         if torch.cuda.is_available():
             data = data.cuda()
@@ -347,3 +347,5 @@ if __name__ == '__main__':
                 picklestring = pickle.dump(bestIndividual, f)  # serialize and save objec
             print("program save OK!")
             print(str(item) + "is Over!!!")
+        if batch_num>1:
+            break
