@@ -22,11 +22,11 @@ import json
 params = {
         'n_population': 100,
         'n_generation': 5000,
-        'prob': 0.4,
+        'prob': 0.5,
         'verbose': 10,
         'stop_fitness': 1e-6,
-        'n_row': 10,
-        'n_col': 10,
+        'n_row': 15,
+        'n_col': 15,
         'levels_back': None,
         'n_eph': 1,
         'function_set': default_functions
@@ -124,6 +124,7 @@ def loss_function(X, y, model):
         loss = ((predictY - y.reshape(-1)) ** 2).mean()
         # print("loss="+str(loss))
     return loss
+
 def evolution(evlutionParam,input,target,file):
     populationSize = n_input = evlutionParam['populationSize']
     n_input=evlutionParam['n_input']
@@ -133,6 +134,7 @@ def evolution(evlutionParam,input,target,file):
     params = evlutionParam['params']
     genNum = evlutionParam['genNum']
     icgpPopulation = []
+
     for i in range(0, populationSize):
         icgp = ImageCGP(n_input, n_output, input_size, output_size, params)
         icgpPopulation.append(icgp)
@@ -255,7 +257,7 @@ if __name__ == '__main__':
     test_dataset = dsets.MNIST(root='./data',
                                train=False,
                                transform=transforms.ToTensor())
-    batch_size = 320
+    batch_size = 64
     # 训练数据集的加载器，自动将数据切分成批，顺序随机打乱
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                                batch_size=batch_size,
@@ -293,37 +295,33 @@ if __name__ == '__main__':
                                               shuffle=False,
                                               sampler=sampler_test)
 
-    n_input, n_output, input_size, output_size = 4,1, (14, 14), (14,14)
+    # n_input, n_output, input_size, output_size = 4,1, (14, 14), (14,14)
     # 最大的演化次数
     itemNum=2
-    # 最大的代数
-    genNum=300
-    # 种群相关设置
-    populationSize= 300
 
     evolutionParam = {
         'params': params,
         'batch_size': 640,
         'populationSize': 300,
-        'genNum': 600,
+        'genNum': 100,
         'n_input':4,
-        'n_output':1,
+        'n_output':8,
         'input_size': (14, 14),
         'output_size': (14, 14),
         'lamda':0.8,
         'mutate_prob':0.4
     }
-
+    batch_num = 0
     for batch_idx, (data, target) in enumerate(train_loader):  # 针对容器中的每一个批进行循环
         if torch.cuda.is_available():
             data = data.cuda()
             nndata = model(data)
             input = nndata[2]
-            target = nndata[3][:,0:1]
+            target = nndata[3][:]
         else:
             nndata = model(data)
             input = nndata[2]
-            target = nndata[3][:, 0:1]
+            target = nndata[3][:]
         for item in range(0, itemNum):
             # 每次种群演化中每代适应度被保存的路径
             filedir = os.path.join(results_dir, "Fitness")
@@ -345,3 +343,6 @@ if __name__ == '__main__':
                 picklestring = pickle.dump(bestIndividual, f)  # serialize and save objec
             print("program save OK!")
             print(str(item) + "is Over!!!")
+        batch_num = batch_num+1
+        if batch_num>1:
+            break

@@ -1,9 +1,6 @@
 {
     "Expression": {
-        "exp(0)": "sqrt(Opening^{(3,)}(1.0/sqrt(((IMG_0)_{((0, 0), (28, 28))}))))",
-        "exp(1)": "Gradient^{(5,)}(((IMG_0)_{((0, 0), (28, 28))})) + MeanBlur^{(3,)}(4*((IMG_0)_{((0, 0), (28, 28))})**2)",
-        "exp(2)": "4*((IMG_0)_{((0, 0), (28, 28))})**2",
-        "exp(3)": "UnsharpMask^{(5, 0.6)}(Gradient^{(7,)}(((IMG_0)_{((0, 0), (28, 28))})))"
+        "exp(0)": "(((IMG_0)_{((0, 0), (14, 14))})**2 + Erosion^{(3,)}(SpatialGradientY(((IMG_1)_{((0, 0), (14, 14))}))))**2"
     },
-    "fitness": "tensor(136612.7969, requires_grad=True)"
+    "fitness": "tensor(0.9957, device='cuda:0', requires_grad=True)"
 }
