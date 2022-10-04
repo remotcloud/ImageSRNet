@@ -259,7 +259,7 @@ if __name__ == '__main__':
     test_dataset = dsets.MNIST(root='./data',
                                train=False,
                                transform=transforms.ToTensor())
-    batch_size = 64
+    batch_size = 320
     # 训练数据集的加载器，自动将数据切分成批，顺序随机打乱
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                                batch_size=batch_size,
@@ -303,9 +303,9 @@ if __name__ == '__main__':
 
     evolutionParam = {
         'params': params,
-        'batch_size': 640,
+        'batch_size': 320,
         'populationSize': 300,
-        'genNum': 100,
+        'genNum': 1000,
         'n_input':4,
         'n_output':8,
         'input_size': (14, 14),
