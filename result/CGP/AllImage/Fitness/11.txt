@@ -1,3 +1,0 @@
-0 tensor(292189.0938, grad_fn=<MeanBackward0>)
-1 tensor(250500.9531, grad_fn=<MeanBackward0>)
-2 tensor(250500.9531, grad_fn=<MeanBackward0>)
