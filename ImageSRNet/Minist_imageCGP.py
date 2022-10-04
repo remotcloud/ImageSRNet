@@ -183,7 +183,7 @@ def evolution(evlutionParam,input,target,file):
                     newPopulation[i] = bestIndividual
     return bestIndividual
 def evolutionNAddLamda(evlutionParam,input,target,file):
-    populationSize = n_input = evlutionParam['populationSize']
+    populationSize = evlutionParam['populationSize']
     n_input=evlutionParam['n_input']
     n_output =evlutionParam['n_output']
     input_size =evlutionParam['input_size']
