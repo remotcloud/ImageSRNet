@@ -127,7 +127,7 @@ class resultDeal(object):
             "Expression": express_dict,
             "fitness": str(indiv.fitness)
         }
-        with open(f'../result/log/result.json', 'w') as f:
+        with open(f'../result/result.json', 'w') as f:
             json.dump(log_dict, f, indent=4)
         print("Save json ok!")
 if __name__ == "__main__":
