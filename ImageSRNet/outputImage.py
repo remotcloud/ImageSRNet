@@ -19,8 +19,13 @@ from Minist_imageCGP import ConvNet
 class resultDeal(object):
     def __init__(self,bestIndividual):
         self.bestIndividual = bestIndividual
-        self.dataSet = self.__getDataSet(batch_size=3000)
-    def __getDataSet(self,batch_size = 640):
+        self.dataSet = self.__getDataPickle()
+    def __getDataPickle(self):
+        fileDir = f'data/mnistData.pkl'
+        with open(fileDir,'rb') as f:
+            nnMnistData = pickle.load(f)
+        return nnMnistData
+    def __saveDataPickle(self,batch_size = 640):
         train_dataset = dsets.MNIST(root='./data',  # 文件存放路径
                                     train=True,  # 提取训练集
                                     # 将图像转化为 Tensor，在加载數据时，就可以对图像做预处理
@@ -50,6 +55,9 @@ class resultDeal(object):
             else:
                 nndata = model(data)
                 break
+        fn = f'data/mnistData.pkl'
+        with open(fn, 'wb') as f:
+            pickle.dump(nndata,f)
         return nndata
     def getResultImageComp(self,idx):
         input = self.dataSet[2][idx].unsqueeze(0)
@@ -65,6 +73,7 @@ class resultDeal(object):
         for i in range(out.shape[1]):
             plt.subplot(2, math.ceil(out.shape[1]/2), i + 1)
             plt.imshow(out[0][i, ...].cpu().data.numpy())
+
         # plt.colorbar(shrink=0.5)
 
         # plt.show()
@@ -73,6 +82,24 @@ class resultDeal(object):
         for i in range(out.shape[1]):
             plt.subplot(2, math.ceil(out.shape[1]/2), i + 1)
             plt.imshow(self.dataSet[3][idx][i, ...].cpu().data.numpy())
+        plt.show()
+
+
+    def getResultImageComp2(self,number):
+        """
+        画图，得到卷积层2预测输出和实际输出的关系
+        :param number: input的数量
+        :return:
+        """
+        fig = plt.figure(figsize=(10, 7))
+        fig.suptitle('input')
+        row = math.ceil(math.sqrt(number))
+        col = math.ceil(number / row)
+        for imageId in range(number):
+            for i in range(col):
+                plt.subplot(row, col,imageId+1 )
+                plt.imshow(self.dataSet[2][imageId].unsqueeze(0)[0][0, ...].cpu().data.numpy())
+
         plt.show()
     def getResultJson(self):
         bestExpression = self.bestIndividual.get_expressions()
@@ -92,7 +119,7 @@ if __name__ == "__main__":
         indiv = pickle.load(f)
     result = resultDeal(indiv)
 
-    result.getResultImageComp(10)
+    result.getResultImageComp2(81)
     result.getResultJson()
 
 
