@@ -58,11 +58,13 @@ class ConvNet(nn.Module):
 
     def forward(self, x):  # 该函数完成神经网络真正的前向运算，在这里把各个组件进行实际的拼装
         # x的尺寸：(batch_size, image_channels, image_width, image_height)
+        layer1CnnInput = x
+
         x = self.conv1(x)  # 第一层卷积
-        x1 = F.relu(x)  # 激活函数用ReLU，防止过拟合
+        layer1CnnOut = F.relu(x)  # 激活函数用ReLU，防止过拟合
         # x的尺寸：(batch_size, num_filters, image_width, image_height)
 
-        layer2input = self.pool(x1)  # 第二层池化，将图片变小
+        layer2input = self.pool(layer1CnnOut)  # 第二层池化，将图片变小
         # x的尺寸：(batch_size, depth[0], image_width/ 2， image_height/2)
 
         x = self.conv2(layer2input)  # 第三层又是卷积，窗口为5，输入输出通道分列为depth[o]=4,depth[1]=8
@@ -88,7 +90,7 @@ class ConvNet(nn.Module):
 
         # 输出层为 log_Softmax，即概率对数值 log(p(×))。采用log_softmax可以使后面的交叉熵计算更快
         x = F.log_softmax(x, dim=1)
-        return x,x1,layer2input,layer2output
+        return layer1CnnInput,layer1CnnOut,layer2input,layer2output
 
     def retrieve_features(self, x):
         # 该函数用于提取卷积神经网络的特征图，返回feature_map1,feature_map2为前两层卷积层的特征图
