@@ -295,25 +295,22 @@ if __name__ == '__main__':
                                               shuffle=False,
                                               sampler=sampler_test)
 
-    n_input, n_output, input_size, output_size = 4,1, (14, 14), (14,14)
+
     # 最大的演化次数
     itemNum=2
     # 最大的代数
-    genNum=300
-    # 种群相关设置
-    populationSize= 300
 
     evolutionParam = {
         'params': params,
-        'batch_size': 640,
+        'batch_size': 320,
         'populationSize': 300,
-        'genNum': 600,
-        'n_input':4,
-        'n_output':1,
+        'genNum': 50,
+        'n_input': 4,
+        'n_output': 8,
         'input_size': (14, 14),
         'output_size': (14, 14),
-        'lamda':0.8,
-        'mutate_prob':0.4
+        'lamda': 0.8,
+        'mutate_prob': 0.4
     }
     batch_num = 0
     for batch_idx, (data, target) in enumerate(train_loader):  # 针对容器中的每一个批进行循环
