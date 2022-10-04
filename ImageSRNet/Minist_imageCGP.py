@@ -321,11 +321,11 @@ if __name__ == '__main__':
             data = data.cuda()
             nndata = model(data)
             input = nndata[2]
-            target = nndata[3][:,0:1]
+            target = nndata[3][:]
         else:
             nndata = model(data)
             input = nndata[2]
-            target = nndata[3][:, 0:1]
+            target = nndata[3][:]
         for item in range(0, itemNum):
             # 每次种群演化中每代适应度被保存的路径
             filedir = os.path.join(results_dir, "Fitness")
