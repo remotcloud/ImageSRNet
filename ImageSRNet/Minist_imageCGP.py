@@ -257,7 +257,7 @@ if __name__ == '__main__':
     test_dataset = dsets.MNIST(root='./data',
                                train=False,
                                transform=transforms.ToTensor())
-    batch_size = 320
+    batch_size = 60
     # 训练数据集的加载器，自动将数据切分成批，顺序随机打乱
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                                batch_size=batch_size,
@@ -313,6 +313,7 @@ if __name__ == '__main__':
         'mutate_prob': 0.4
     }
     batch_num = 0
+    run_num =0
     for batch_idx, (data, target) in enumerate(train_loader):  # 针对容器中的每一个批进行循环
         if torch.cuda.is_available():
             data = data.cuda()
@@ -339,7 +340,7 @@ if __name__ == '__main__':
                 f.write(str(item) + " " + str(bestExpression) + "\n")
             # print('expr:', bestIndividual.get_expressions())
             # print('y:', bestIndividual(data))
-            fn = f'CGPIndiva/{item}bestIndiv.pkl'
+            fn = f'CGPIndiva/{run_num}_{item}bestIndiv.pkl'
             with open(fn, 'wb') as f:  # open file with write-mode
                 picklestring = pickle.dump(bestIndividual, f)  # serialize and save objec
             print("program save OK!")
