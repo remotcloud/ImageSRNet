@@ -1,6 +1,8 @@
+import copy
 import math
 import os
 import traceback
+from multiprocessing import Process
 
 import numpy as np
 import torch
@@ -15,30 +17,30 @@ from image_functions import default_functions
 from sr_objs import ImageCGP
 
 import _pickle as pickle
+from joblib import Parallel, delayed
 import json
 
-
-
 params = {
-        'n_population': 100,
-        'n_generation': 5000,
-        'prob': 0.4,
-        'verbose': 10,
-        'stop_fitness': 1e-6,
-        'n_row': 10,
-        'n_col': 10,
-        'levels_back': None,
-        'n_eph': 1,
-        'function_set': default_functions
+    'n_population': 100,
+    'n_generation': 5000,
+    'prob': 0.4,
+    'verbose': 10,
+    'stop_fitness': 1e-6,
+    'n_row': 10,
+    'n_col': 10,
+    'levels_back': None,
+    'n_eph': 1,
+    'function_set': default_functions
 }
 image_size = 28  # 图像的总尺寸为 28x28
 num_classes = 10  # 标签的种类数
 num_epochs = 20  # 训练的总猜环周期
 
-
 results_dir = '../result/CGP/AllImage'
 
 depth = [4, 8]
+
+
 class ConvNet(nn.Module):
     def __init__(self):
         # 该函数在创建一个ConvNet对象即调用语句net=ConvNet()时就会被调用
@@ -90,7 +92,7 @@ class ConvNet(nn.Module):
 
         # 输出层为 log_Softmax，即概率对数值 log(p(×))。采用log_softmax可以使后面的交叉熵计算更快
         x = F.log_softmax(x, dim=1)
-        return layer1CnnInput,layer1CnnOut,layer2input,layer2output
+        return layer1CnnInput, layer1CnnOut, layer2input, layer2output
 
     def retrieve_features(self, x):
         # 该函数用于提取卷积神经网络的特征图，返回feature_map1,feature_map2为前两层卷积层的特征图
@@ -99,14 +101,15 @@ class ConvNet(nn.Module):
         # 第二层卷积，两层特征图都存储到了 feature_map1,feature map2 中
         feature_map2 = F.relu(self.conv2(x))
         return (feature_map1, feature_map2)
-    def testGpu(self,x):
+
+    def testGpu(self, x):
         target = torch.rand_like(x)
         target = target.cpu()
-        y = x*target
+        y = x * target
         return y
+
+
 def loss_function(X, y, model):
-
-
     try:
         if torch.cuda.is_available():
             model = model.cuda()
@@ -117,7 +120,7 @@ def loss_function(X, y, model):
 
         # predictY = predictY.reshape(-1)
         # loss = ((predictY - y.reshape(-1)) ** 2).mean()
-        #loss.backward()
+        # loss.backward()
 
     except Exception as e:
         traceback.print_exc()
@@ -126,12 +129,14 @@ def loss_function(X, y, model):
         loss = ((predictY - y.reshape(-1)) ** 2).mean()
         # print("loss="+str(loss))
     return loss
-def evolution(evlutionParam,input,target,file):
+
+
+def evolution(evlutionParam, input, target, file):
     populationSize = n_input = evlutionParam['populationSize']
-    n_input=evlutionParam['n_input']
-    n_output =evlutionParam['n_output']
-    input_size =evlutionParam['input_size']
-    output_size= evlutionParam['output_size']
+    n_input = evlutionParam['n_input']
+    n_output = evlutionParam['n_output']
+    input_size = evlutionParam['input_size']
+    output_size = evlutionParam['output_size']
     params = evlutionParam['params']
     genNum = evlutionParam['genNum']
     icgpPopulation = []
@@ -180,12 +185,14 @@ def evolution(evlutionParam,input,target,file):
                 else:
                     newPopulation[i] = bestIndividual
     return bestIndividual
-def evolutionNAddLamda(evlutionParam,input,target,file):
+
+
+def evolutionNAddLamda(evlutionParam, input, target, file,run_num,item):
     populationSize = evlutionParam['populationSize']
-    n_input=evlutionParam['n_input']
-    n_output =evlutionParam['n_output']
-    input_size =evlutionParam['input_size']
-    output_size= evlutionParam['output_size']
+    n_input = evlutionParam['n_input']
+    n_output = evlutionParam['n_output']
+    input_size = evlutionParam['input_size']
+    output_size = evlutionParam['output_size']
     params = evlutionParam['params']
     genNum = evlutionParam['genNum']
     lamda = evlutionParam['lamda']
@@ -227,7 +234,7 @@ def evolutionNAddLamda(evlutionParam,input,target,file):
             # 将最优个体添加至下一代种群
             newPopulation[0] = bestIndividual
             # 变异产生新个体
-            for i in range(1, math.ceil(populationSize*lamda)):
+            for i in range(1, math.ceil(populationSize * lamda)):
                 mutated_icgp = bestIndividual.mutate(mutate_prob)
                 # 计算新个体的适应度函数值
                 mutated_icgp.fitness = loss_function(input, target, mutated_icgp)
@@ -236,15 +243,48 @@ def evolutionNAddLamda(evlutionParam,input,target,file):
                     newPopulation[i] = mutated_icgp
                 else:
                     newPopulation[i] = bestIndividual
-            for j in range(math.ceil(populationSize*lamda),populationSize):
+            for j in range(math.ceil(populationSize * lamda), populationSize):
                 new_icgp = ImageCGP(n_input, n_output, input_size, output_size, params)
                 # 计算新个体的适应度函数值
                 new_icgp.fitness = loss_function(input, target, new_icgp)
                 # 在变异产生的新个体和父代个体中选择最优秀的个体保存下来
                 newPopulation[j] = new_icgp
-
+        if gen % 1000 == 0:
+            #异步存储数据
+            bestIndividual.fitness = bestIndividual.fitness.detach()
+            p = Process(target=parallel_save_result, args=(bestIndividual,gen,run_num,item,))
+            print('Child process will start.')
+            p.start()
     return bestIndividual
-if __name__ == '__main__':
+
+def parallel_save_result(best_individual, gen,run_num,item):
+    indiv_dir = f'CGPIndiva/'
+    save_dir = os.path.join(indiv_dir,f'{run_num}_{item}_indiv')
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    fn = f'CGPIndiva/{run_num}_{item}_indiv/bestIndiv.pkl'
+    with open(fn, 'wb') as f:  # open file with write-mode
+        pickle.dump(best_individual, f)  # serialize and save objec
+
+    #保存日志信息，每个表达式
+    bestExpression = best_individual.get_expressions()
+    express_dict = {}
+    for i, exp in enumerate(bestExpression):
+        express_dict[f'exp({i})'] = str(exp)
+
+    log_info = {
+        'run_num': str(run_num),
+        'run_item': str(item),
+        'generation': str(gen),
+        'fitness': str(best_individual.fitness),
+        'Expression': express_dict
+    }
+    log_dir = f'CGPIndiva/{run_num}_{item}_indiv/log.json'
+    with open(log_dir, 'w') as f:  # open file with write-mode
+        json.dump(log_info, f ,indent=4)  # serialize and save objec
+    print(f'{gen} generation program save OK!')
+
+def get_data(batch_size):
     '''______________________________开始获取数据的过程______________________________'''
     # 加载MNIST数据 MNIST数据属于 torchvision 包自带的数据,可以直接接调用
     # 当用户想调用自己的图俱数据时，可以用torchvision.datasets.ImageFolder或torch.utils.data. TensorDataset来加载
@@ -257,20 +297,11 @@ if __name__ == '__main__':
     test_dataset = dsets.MNIST(root='./data',
                                train=False,
                                transform=transforms.ToTensor())
-    batch_size = 60
+
     # 训练数据集的加载器，自动将数据切分成批，顺序随机打乱
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                                batch_size=batch_size,
                                                shuffle=True)
-    '''
-    得到Cnn的神经网络
-    '''
-    model = ConvNet()
-    fname = 'ministCnn'
-    model.load_state_dict(torch.load(f"ModelSave/{fname}.pth"))
-
-    if torch.cuda.is_available():
-        model = model.cuda()
     '''                                         
     将测试数据分成两部分，一部分作为校验数据，一部分作为测试数据。
     校验数据用于检测模型是否过拟合并调整参数，测试数据检验整个模型的工作
@@ -294,17 +325,33 @@ if __name__ == '__main__':
                                               batch_size=batch_size,
                                               shuffle=False,
                                               sampler=sampler_test)
+    return train_loader
+if __name__ == '__main__':
 
+    '''
+    得到Cnn的神经网络
+    '''
+    model = ConvNet()
+    fname = 'ministCnn'
+    model.load_state_dict(torch.load(f"ModelSave/{fname}.pth"))
+
+    if torch.cuda.is_available():
+        model = model.cuda()
 
     # 最大的演化次数
-    itemNum=2
+    itemNum = 2
     # 最大的代数
+    batch_size = 60
+    batch_num = 0
+    run_num = 1
+
+    train_loader = get_data(batch_size)
 
     evolutionParam = {
         'params': params,
         'batch_size': 320,
-        'populationSize': 300,
-        'genNum': 50,
+        'populationSize': 3,
+        'genNum': 500,
         'n_input': 4,
         'n_output': 8,
         'input_size': (14, 14),
@@ -312,8 +359,7 @@ if __name__ == '__main__':
         'lamda': 0.8,
         'mutate_prob': 0.4
     }
-    batch_num = 0
-    run_num =0
+
     for batch_idx, (data, target) in enumerate(train_loader):  # 针对容器中的每一个批进行循环
         if torch.cuda.is_available():
             data = data.cuda()
@@ -331,19 +377,18 @@ if __name__ == '__main__':
                 os.makedirs(filedir)
             file = os.path.join(filedir, str(item) + ".txt")
             # bestIndividual = evolution(evolutionParam,input,target,file)
-            bestIndividual = evolutionNAddLamda(evolutionParam, input, target, file)
+            bestIndividual = evolutionNAddLamda(evolutionParam, input, target, file,run_num,item)
             # 保存此次种群演化最优的个体的表达式
             # 保存此次种群演化最优的个体的相关信息(表达式)
             fileExpression = os.path.join(results_dir, "Expression.txt")
             bestExpression = bestIndividual.get_expressions()
             with open(fileExpression, "a") as f:
                 f.write(str(item) + " " + str(bestExpression) + "\n")
-            # print('expr:', bestIndividual.get_expressions())
-            # print('y:', bestIndividual(data))
+
             fn = f'CGPIndiva/{run_num}_{item}bestIndiv.pkl'
             with open(fn, 'wb') as f:  # open file with write-mode
                 picklestring = pickle.dump(bestIndividual, f)  # serialize and save objec
             print("program save OK!")
             print(str(item) + "is Over!!!")
-        if batch_num>1:
+        if batch_num > 1:
             break
