@@ -115,11 +115,11 @@ def loss_function(X, y, model):
             model = model.cuda()
         predictY = model(X)
 
-        criterion = F.l1_loss#nn.L1Loss()
-        loss = criterion(predictY, y)
+        # criterion = nn.L1Loss()
+        # loss = criterion(predictY, y)
 
-        # predictY = predictY.reshape(-1)
-        # loss = ((predictY - y.reshape(-1)) ** 2).mean()
+        predictY = predictY.reshape(-1)
+        loss = math.sqrt(((predictY - y.reshape(-1)) ** 2).mean())
         # loss.backward()
 
     except Exception as e:
@@ -251,10 +251,11 @@ def evolutionNAddLamda(evlutionParam, input, target, file,run_num,item):
                 newPopulation[j] = new_icgp
         if gen % 1000 == 0:
             #异步存储数据
-            bestIndividual.fitness = bestIndividual.fitness.detach()
+            # bestIndividual.fitness = bestIndividual.fitness.detach()
+            # bestIndividual_copy = copy.deepcopy(bestIndividual)
             p = Process(target=parallel_save_result, args=(bestIndividual,gen,run_num,item,))
             print('Child process will start.')
-            # p.start()
+            p.start()
     return bestIndividual
 
 def parallel_save_result(best_individual, gen,run_num,item):
