@@ -352,7 +352,7 @@ if __name__ == '__main__':
         'params': params,
         'batch_size': 320,
         'populationSize': 5,
-        'genNum': 500,
+        'genNum': 120,
         'n_input': 4,
         'n_output': 8,
         'input_size': (14, 14),
@@ -381,7 +381,8 @@ if __name__ == '__main__':
             bestIndividual = evolutionNAddLamda(evolutionParam, input, target, file,run_num,item)
             # 保存此次种群演化最优的个体的表达式
             # 保存此次种群演化最优的个体的相关信息(表达式)
-            fileExpression = os.path.join(results_dir, "Expression.txt")
+            parallel_save_result(bestIndividual, evolutionParam['genNum'], run_num, item)
+            '''fileExpression = os.path.join(results_dir, "Expression.txt")
             bestExpression = bestIndividual.get_expressions()
             with open(fileExpression, "a") as f:
                 f.write(str(item) + " " + str(bestExpression) + "\n")
@@ -389,7 +390,7 @@ if __name__ == '__main__':
             fn = f'CGPIndiva/{run_num}_{item}bestIndiv.pkl'
             with open(fn, 'wb') as f:  # open file with write-mode
                 picklestring = pickle.dump(bestIndividual, f)  # serialize and save objec
-            print("program save OK!")
+            print("program save OK!")'''
             print(str(item) + "is Over!!!")
         if batch_num > 1:
             break
