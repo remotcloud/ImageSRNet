@@ -399,5 +399,5 @@ if __name__ == '__main__':
             print("program save OK!")'''
             print(str(item) + "is Over!!!")
         batch_num = batch_num+1
-        if batch_num > 1:
+        if batch_num >=1:
             break
