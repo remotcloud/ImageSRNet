@@ -8,6 +8,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.tensorboard import SummaryWriter
 from matplotlib import pyplot as plt
 import torchvision.datasets as dsets
 import torchvision.transforms as transforms
@@ -115,11 +116,11 @@ def loss_function(X, y, model):
             model = model.cuda()
         predictY = model(X)
 
-        # criterion = nn.L1Loss()
-        # loss = criterion(predictY, y)
+        criterion = nn.L1Loss()
+        loss = criterion(predictY, y)
 
-        predictY = predictY.reshape(-1)
-        loss = math.sqrt(((predictY - y.reshape(-1)) ** 2).mean())
+        # predictY = predictY.reshape(-1)
+        # loss = math.sqrt(((predictY - y.reshape(-1)) ** 2).mean())
         # loss.backward()
 
     except Exception as e:
@@ -128,7 +129,7 @@ def loss_function(X, y, model):
 
         loss = ((predictY - y.reshape(-1)) ** 2).mean()
         # print("loss="+str(loss))
-    return loss
+    return loss.data.cpu()
 
 
 def evolution(evlutionParam, input, target, file):
@@ -215,9 +216,13 @@ def evolutionNAddLamda(evlutionParam, input, target, file,run_num,item):
         f.write(str(0) + " " + str(bestIndividual.fitness) + "\n")
     # 下一代种群
     newPopulation = [i for i in range(0, populationSize)]
+    file_dir = "../result"
+    writer = SummaryWriter(file_dir)
     # 对于每一代种群
     for gen in range(0, genNum):
 
+        loss = bestIndividual.fitness
+        writer.add_scalar("loss", loss, gen)
         if gen != 0:
             # 新种群成为下一代种群
             # for i in range(0, populationSize):
@@ -256,6 +261,7 @@ def evolutionNAddLamda(evlutionParam, input, target, file,run_num,item):
             p = Process(target=parallel_save_result, args=(bestIndividual,gen,run_num,item,))
             print('Child process will start.')
             p.start()
+    writer.close()
     return bestIndividual
 
 def parallel_save_result(best_individual, gen,run_num,item):
@@ -340,7 +346,7 @@ if __name__ == '__main__':
         model = model.cuda()
 
     # 最大的演化次数
-    itemNum = 2
+    itemNum = 1
     # 最大的代数
     batch_size = 60
     batch_num = 0
@@ -351,7 +357,7 @@ if __name__ == '__main__':
     evolutionParam = {
         'params': params,
         'batch_size': 320,
-        'populationSize': 5,
+        'populationSize': 20,
         'genNum': 120,
         'n_input': 4,
         'n_output': 8,
@@ -392,5 +398,6 @@ if __name__ == '__main__':
                 picklestring = pickle.dump(bestIndividual, f)  # serialize and save objec
             print("program save OK!")'''
             print(str(item) + "is Over!!!")
+        batch_num = batch_num+1
         if batch_num > 1:
             break
