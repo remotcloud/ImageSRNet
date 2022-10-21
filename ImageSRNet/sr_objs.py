@@ -35,7 +35,9 @@ class ImageCGP(nn.Module):
         self.len_group = self.params.max_arity * 3 + 1
 
         self.genes = genes
+        # 基因的上下界
         self.bounds = bounds
+        # constant 常数
         self.ephs = ephs
         if self.genes is None:
             self.genes, self.bounds = create_icgp_genes_bounds(self.params)
@@ -107,6 +109,7 @@ class ImageCGP(nn.Module):
                     # get the functional value
                     operants = reversed([value_stack.pop() for _ in range(func.arity)])
                     value = func(*operants, feature_infos=feature_infos, params=func_params)
+
                     if input_image.is_cuda:
                         value = value.cuda()
                 node_idx_stack.append(node_idx)

@@ -70,8 +70,8 @@ def create_icgp_genes_bounds(params: ImageCGPParameters):
         genes.append(f_gene)
 
         # next bits are input of the node function.
-        col = (i - params.n_input - params.n_eph) // params.n_row
-        up = params.n_input + params.n_eph + col * params.n_row - 1
+        row_th = (i - params.n_input - params.n_eph) // params.n_row
+        up = params.n_input + params.n_eph + row_th * params.n_row - 1
         low = max(0, up - params.levels_back)
         for i_arity in range(params.max_arity):
             lowers.append(low)
