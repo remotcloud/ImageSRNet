@@ -1,3 +1,4 @@
+import io
 import os
 import pickle
 
@@ -5,6 +6,8 @@ import numpy as np
 import torch
 import random
 
+import torchvision.datasets as dsets
+import torchvision.transforms as transforms
 # from ImageSRNet.image_functions import function_map
 # from data_utils import io
 from image_functions import function_map
@@ -286,3 +289,45 @@ def save_checkpoint(population, conv_f, checkpoint_dir):
             pickle.dump(indiv, f)
 
     np.savetxt(os.path.join(checkpoint_dir, 'conv_f'), conv_f)
+def get_data(batch_size):
+    '''______________________________开始获取数据的过程______________________________'''
+    # 加载MNIST数据 MNIST数据属于 torchvision 包自带的数据,可以直接接调用
+    # 当用户想调用自己的图俱数据时，可以用torchvision.datasets.ImageFolder或torch.utils.data. TensorDataset来加载
+    train_dataset = dsets.MNIST(root='./data',  # 文件存放路径
+                                train=True,  # 提取训练集
+                                # 将图像转化为 Tensor，在加载數据时，就可以对图像做预处理
+                                transform=transforms.ToTensor(),
+                                download=True)  # 当找不到文件的时候，自动下載
+    # 加载测试数据集
+    test_dataset = dsets.MNIST(root='./data',
+                               train=False,
+                               transform=transforms.ToTensor())
+
+    # 训练数据集的加载器，自动将数据切分成批，顺序随机打乱
+    train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
+                                               batch_size=batch_size,
+                                               shuffle=True)
+    '''                                         
+    将测试数据分成两部分，一部分作为校验数据，一部分作为测试数据。
+    校验数据用于检测模型是否过拟合并调整参数，测试数据检验整个模型的工作
+    '''
+    # 首先，定义下标数组 indices，它相当于对所有test_dataset 中数据的编码
+    # 然后，定义下标 indices_val 表示校验集数据的下标，indices_test 表示测试集的下标
+
+    indices = range(len(test_dataset))
+    indices_val = indices[: 64]
+    indices_test = indices[64:128]
+    # 根据下标构造两个数据集的SubsetRandomSampler 来样器，它会对下标进行来样
+    sampler_val = torch.utils.data.sampler.SubsetRandomSampler(indices_val)
+    sampler_test = torch.utils.data.sampler.SubsetRandomSampler(indices_test)
+    # 根据两个采样器定义加载器
+    # 注意将sampler_val 和sampler_test 分别賦值给了 validation_loader 和 test_loader
+    validation_loader = torch.utils.data.DataLoader(dataset=test_dataset,
+                                                    batch_size=batch_size,
+                                                    shuffle=False,
+                                                    sampler=sampler_val)
+    test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
+                                              batch_size=batch_size,
+                                              shuffle=False,
+                                              sampler=sampler_test)
+    return train_loader
