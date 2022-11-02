@@ -16,7 +16,15 @@ from image_functions import default_functions
 from utils import ImageCGPParameters, create_icgp_genes_bounds, get_active_paths, create_func_params_list, \
     CGPParameters, create_genes_and_bounds, create_nodes, get_active_paths_by_nodes
 
+"""
+给出一个使用图像函数库进行组合的公式，
+通过genes保存CGP中所有的节点，然后
+通过eph生成随机常数，bounds给出基因
+的上下边界。其中active_paths是CGP中
+的激活路径，代表所有输出的公式
+"""
 class ImageCGP(nn.Module):
+
     def __init__(
             self, n_input, n_output, input_size, output_size, params: dict,
             genes=None, bounds=None, ephs=None):
@@ -95,6 +103,8 @@ class ImageCGP(nn.Module):
             for node_idx in active_path:
                 if node_idx < n_input_node:
                     value = input_image[:, node_idx:node_idx+1] if node_idx < self.n_input else self.ephs[node_idx-self.n_input]
+                    if input_image.is_cuda:
+                        value = value.cuda()
                 else:
                     func_gene_idx = (node_idx - n_input_node) * self.len_group
                     func = self.params.function_set[self.genes[func_gene_idx]]
@@ -110,8 +120,6 @@ class ImageCGP(nn.Module):
                     operants = reversed([value_stack.pop() for _ in range(func.arity)])
                     value = func(*operants, feature_infos=feature_infos, params=func_params)
 
-                    if input_image.is_cuda:
-                        value = value.cuda()
                 node_idx_stack.append(node_idx)
                 value_stack.append(value)
             output_value = value_stack.pop()
@@ -177,6 +185,8 @@ class CGPLayer(nn.Module):
                 node = self.nodes[gene]
                 if node.is_input:
                     node.value = self.ephs[node.no - self.cp.n_input] if node.no >= self.cp.n_input else x[:, node.no]
+                    if(torch.cuda.is_available()):
+                        node.value = node.value.cuda()
                 elif node.is_output:
                     node.value = self.nodes[node.inputs[0]].value
                 else:
