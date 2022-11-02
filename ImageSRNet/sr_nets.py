@@ -108,7 +108,7 @@ class ImageCGPNet(nn.Module):
                 for i, expr in enumerate(exprs):
                     exprs[i] = '{}({})'.format(ap_oper, expr)
 
-        return str(exprs)
+        return exprs
 
     def forward(self, input_img):
         # input_img: [BxCxHxW]
@@ -225,8 +225,6 @@ LeNetCGPNet = partial(CNNCGPNet, [1, 6, 16], [(28, 28), (12, 12)], [(24, 24), (8
 
 if __name__ == '__main__':
     params = {
-        'n_population': 100,
-        'n_generation': 5000,
         'prob': 0.4,
         'verbose': 10,
         'stop_fitness': 1e-6,
@@ -256,7 +254,9 @@ if __name__ == '__main__':
                            mlp_input, mlp_hiddens, mlp_output, params)
     # outputs = cnn_cgpnet(torch.rand(2, 1, 28, 28))
     # print(list([output.shape for output in outputs]))
-    print(cnn_cgpnet.get_cnn_expressions(), '\n', cnn_cgpnet.get_mlp_expressions())
+    # print(cnn_cgpnet.get_cnn_expressions(), '\n', cnn_cgpnet.get_mlp_expressions())
+    for exp in cnn_cgpnet.get_cnn_expressions():
+        print(exp)
     print(2)
     mutated = cnn_cgpnet.mutate(0.4)
     outputs = mutated(torch.rand(2, 1, 28, 28))
