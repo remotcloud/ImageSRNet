@@ -76,20 +76,14 @@ class ImageCGPNet(nn.Module):
                 input_size, output_size = self.input_size_list[i], self.output_size_list[i]
                 setattr(
                     self, 'conv_chrome{}'.format(i+1),
-                    nn.Sequential(
-                        ImageCGP(in_channel, out_channel, input_size, output_size, params),
-                        self.active_pool
-                    )
+                    ImageCGP(in_channel, out_channel, input_size, output_size, params)
                 )
         else:
             assert len(image_cgps) == self.n_conv_layer
             for i, image_cgp in enumerate(image_cgps):
                 setattr(
                     self, 'conv_chrome{}'.format(i+1),
-                    nn.Sequential(
-                        image_cgp,
-                        self.active_pool
-                    )
+                        image_cgp
                 )
 
     def get_cgp_expressions(self):
