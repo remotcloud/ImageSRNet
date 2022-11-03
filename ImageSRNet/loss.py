@@ -49,9 +49,9 @@ def loss_function(X, y, model):
 
     except Exception as e:
         traceback.print_exc()
+        print(e)
         predictY = predictY.reshape(-1)
 
         loss = ((predictY - y.reshape(-1)) ** 2).mean()
-        # print("loss="+str(loss))
     return loss.data.cpu()
 
