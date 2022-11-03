@@ -59,9 +59,10 @@ def get_data(batch_size):
     return train_loader, validation_loader, test_loader
 
 
-def evolutionNAddLamdaCommon(evlutionParam, input, target, file, run_num, item, Individual ):
+def evolutionNAddLamdaCommon(evlutionParam, input, target, file, run_num, item, Individual: type ):
     """
     n+lamda 通用进化算法
+    :param Individual:
     :param evlutionParam:
     :param input:
     :param target:
@@ -70,62 +71,72 @@ def evolutionNAddLamdaCommon(evlutionParam, input, target, file, run_num, item, 
     :param item:
     :return:
     """
+    if isinstance(Individual, type) is False:
+        raise ValueError("Individual is not a class")
+
     populationSize = evlutionParam.populationSize
 
     genNum = evlutionParam.genNum
     lamda = evlutionParam.lamda
     mutate_prob = evlutionParam.mutate_prob
 
-    icgpPopulation = []
+    population = []
     for i in range(0, populationSize):
-        icgp = Individual(evlutionParam)
-        icgpPopulation.append(icgp)
+        idiv = Individual(evlutionParam)
+        population.append(idiv)
     # 计算种群中的每个个体的适应度函数值
     for i in range(0, populationSize):
-        indiv = icgpPopulation[i]
+        idiv = population[i]
         try:
-            indiv.fitness = loss_function(input, target, indiv)
-        except:
-            indiv.fitness = loss_function(input, target, indiv)
+            # idiv.fitness = loss_function(input, target, idiv)
+            setattr(idiv,'fitness',loss_function(input, target, idiv))
+        except Exception as e:
+            print(e)
+            setattr(idiv, 'fitness', loss_function(input, target, idiv))
     # 寻找当代最优个体，并且记录了该个体
-    bestIndividual = min(icgpPopulation, key=lambda x: x.fitness)
+    best_individual = min(population, key=lambda x: x.fitness)
 
     with open(file, "a") as f:
-        f.write(str(0) + " " + str(bestIndividual.fitness) + "\n")
+        f.write(str(0) + " " + str(best_individual.fitness) + "\n")
     # 下一代种群
     newPopulation = [i for i in range(0, populationSize)]
+
     file_dir = "../result"
     writer = SummaryWriter(file_dir)
+
     # 对于每一代种群
     for gen in range(0, genNum):
 
-        loss = bestIndividual.fitness
+        loss = best_individual.fitness
         writer.add_scalar("loss", loss, gen)
         if gen != 0:
             # 新种群成为下一代种群
             # for i in range(0, populationSize):
             #     icgpPopulation[i] = newPopulation[i]
-            icgpPopulation = newPopulation
+            population = newPopulation
             # 寻找当代最优个体，并且记录了该个体
-            bestIndividual = min(icgpPopulation, key=lambda x: x.fitness)
+            best_individual = min(population, key=lambda x: x.fitness)
+
             if gen == genNum or gen % 30 == 0:
                 with open(file, "a") as f:
-                    f.write(str(gen) + " " + str(bestIndividual.fitness) + "\n")
-                print(str(bestIndividual.fitness))
-                print("gen=" + str(gen))
+                    fitness = getattr(best_individual, 'fitness')
+                    f.write(str(gen) + " " + str(fitness) + "\n")
+                # print(str(fitness))
+                # print("gen=" + str(gen))
         if gen < (genNum - 1):
             # 将最优个体添加至下一代种群
-            newPopulation[0] = bestIndividual
+            newPopulation[0] = best_individual
             # 变异产生新个体
             for i in range(1, math.ceil(populationSize * lamda)):
-                mutated_icgp = bestIndividual.mutate(mutate_prob)
+                mutated_icgp = best_individual.mutate(mutate_prob)
                 # 计算新个体的适应度函数值
-                mutated_icgp.fitness = loss_function(input, target, mutated_icgp)
+                #mutated_icgp.fitness = loss_function(input, target, mutated_icgp)
+                setattr(mutated_icgp, 'fitness', loss_function(input, target, mutated_icgp))
                 # 在变异产生的新个体和父代个体中选择最优秀的个体保存下来
-                if mutated_icgp.fitness <= bestIndividual.fitness:
+                if mutated_icgp.fitness <= best_individual.fitness:
                     newPopulation[i] = mutated_icgp
                 else:
-                    newPopulation[i] = bestIndividual
+                    newPopulation[i] = best_individual
             for j in range(math.ceil(populationSize * lamda), populationSize):
                 new_icgp = Individual(evlutionParam)
                 # 计算新个体的适应度函数值
@@ -136,11 +147,11 @@ def evolutionNAddLamdaCommon(evlutionParam, input, target, file, run_num, item, 
             #异步存储数据
             # bestIndividual.fitness = bestIndividual.fitness.detach()
             # bestIndividual_copy = copy.deepcopy(bestIndividual)
-            p = Process(target=parallel_save_result, args=(bestIndividual,gen,run_num,item,))
+            p = Process(target=parallel_save_result, args=(best_individual,gen,run_num,item,))
             print('Child process will start.')
             p.start()
     writer.close()
-    return bestIndividual
+    return best_individual
 
 def parallel_save_result(best_individual, gen,run_num,item):
     """Save the best individual and the corresponding information"""
