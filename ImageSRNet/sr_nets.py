@@ -115,7 +115,7 @@ class ImageCGPNet(nn.Module):
         return output_imgs
 
     def mutate(self, prob):
-        mutated_icgps = [getattr(self, 'conv_chrome{}'.format(i+1))[0].mutate(prob) for i in range(self.n_conv_layer)]
+        mutated_icgps = [getattr(self, 'conv_chrome{}'.format(i+1)).mutate(prob) for i in range(self.n_conv_layer)]
         return ImageCGPNet(
             self.channels_list, self.input_size_list, self.output_size_list,
             self.params, mutated_icgps, self.active_pool
