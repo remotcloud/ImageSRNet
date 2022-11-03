@@ -89,18 +89,19 @@ class ImageCGPNet(nn.Module):
     def get_cgp_expressions(self):
         return list([getattr(self, 'conv_chrome{}'.format(i+1))[0].get_expressions() for i in range(self.n_conv_layer)])
 
-    def __repr__(self, var_names=None, active_pool_name=['MaxPool_{(2,2)}', 'ReLU']):
+    def __repr__(self, var_names=None, active_pool_name= None):
         if not var_names:
             var_names = ['IMG_{}'.format(i) for i in range(self.n_input)]
         assert len(var_names) == self.n_input
         exprs = var_names
 
         for i in range(self.n_conv_layer):
-            image_cgp = getattr(self, 'conv_chrome{}'.format(i + 1))[0]
+            image_cgp = getattr(self, 'conv_chrome{}'.format(i + 1))
             exprs = image_cgp.get_expressions(var_names=exprs)
-            for ap_oper in active_pool_name:
-                for i, expr in enumerate(exprs):
-                    exprs[i] = '{}({})'.format(ap_oper, expr)
+            if active_pool_name is not None:
+                for ap_oper in active_pool_name:
+                    for i, expr in enumerate(exprs):
+                        exprs[i] = '{}({})'.format(ap_oper, expr)
 
         return exprs
 
