@@ -1,13 +1,9 @@
-import math
-import os
-import random
-
-from utils import SRNetDataset, save_checkpoint
-from minis_sr_utils import evolutionNAddLamdaCommon, get_data, DataSetManager, parallel_save_result
-from sr_nets import *
+from ImageSRNet.minis_sr_utils import evolutionNAddLamdaCommon, get_data, DataSetManager, parallel_save_result
+from ImageSRNet.sr_nets import *
+from ImageSRNet import *
 import torch
 import torch.nn as nn
-from Minist_imageCGP import ConvNet  # loss函数希望最后能够通用化
+from ImageSRNet.Minist_imageCGP import ConvNet  # loss函数希望最后能够通用化
 from torch.utils.data import Dataset
 
 from torch.utils.tensorboard import SummaryWriter
@@ -62,6 +58,8 @@ class MnistSRWithWeight(nn.Module):
     def forward(self, input):
         x = self.weight * self.mnist_sr(input)
         return x
+    def __str__(self):
+        return 'MnistSRWithWeight'
 
 
 class Args(object):
@@ -70,9 +68,13 @@ class Args(object):
 
 
 if __name__ == '__main__':
-    run_num = 1    # number of run the program
-    run_times = 1  # times of run the program
-    print(SRNetDataset)
+    run_num = 1         # number of run the program
+    run_times = 1       # times of run the program
+    hidden_num = 1      # number of hidden layer
+    epoch_num = 1000    # 第二步学习参数的训练步数
+    checkpoint_interval = 200
+    model_name = 'MnistSRWithWeight'
+    # print(SRNetDataset)
     sr_data = Minist_Data("./data", get_data(60))
 
     model = ConvNet()
@@ -81,11 +83,11 @@ if __name__ == '__main__':
 
     if torch.cuda.is_available():
         model = model.cuda()
-    image_size = 28  # 图像的总尺寸为 28x28
-    num_classes = 10  # 标签的种类数
-    num_epochs = 20  # 训练的总猜环周期
-    layer = 'cnn_hidden1' #训练的层
+
+    layer = f'cnn_hidden{hidden_num}' #训练的层
     indiv_dir = f'CGPIndiva/{layer}/'
+
+    # CGP的参数初始化
     params = {
         'prob': 0.4,
         'verbose': 10,
@@ -97,107 +99,88 @@ if __name__ == '__main__':
         'function_set': default_functions,
         'optim_interval': 50
     }
-    itemNum = 1
-    # 最大的代数
-    batch_size = 60
-    batch_num = 0
-
-    train_loader = get_data(batch_size)
-
-    # 参数初始化
+    input_sizes = [[(28, 28)],[(14,14)]]
+    output_sizes = [[(28, 28)],[(14,14)]]
+    # SRNN的参数初始化
     args = Args()
-    args.channels_list = [1, 8]  # , 16]
-    args.input_sizes = [(28, 28)]  # , (12, 12)]
-    args.output_sizes = [(14, 14)]  # , (8, 8)]
+    args.channels_list = [1, 4]  # , 16]
+    args.input_sizes = input_sizes[0]
+    args.output_sizes = output_sizes[0]
     args.mlp_input = 16 * 4 * 4
     args.mlp_hiddens = [120, 84]
     args.mlp_output = 10
     args.params = params
     args.batch_size = 200
-    args.populationSize = 500
-    args.genNum = 120
+
+    args.populationSize = 50
+    args.genNum = 12
     args.lamda = 0.8
     args.mutate_prob = 0.4
 
     # 第一步跑遗传规划得到相对较好的结构
     # mnist_sr = Minist_SR(args)
+
     bestIndividual = None
     dataset_manager = DataSetManager()
 
-    network_input = dataset_manager.dataSet[0].cuda()
+    # 加载规定的一批数据
+    network_input = dataset_manager.raw_mnist_data[0]
 
     for batch_idx, (data, target) in enumerate(sr_data.train_loader):  # 针对容器中的每一个批进行循环
         # 暂时不使用整体数据集
-        # if torch.cuda.is_available():
-        #     data = data.cuda()
-        #     network_data = model(data)
-        #     input = network_data[0]
-        #     target = network_data[3][:]
-        # else:
-        #     network_data = model(data)
-        #     input = network_data[0]
-        #     target = network_data[3][:]
-
         if torch.cuda.is_available():
             network_input = network_input.cuda()
             network_data = model(network_input)
-            net_input = network_data[0]
-            cnn_hidden1 = network_data[1, :]
-            cnn_hidden2 = network_data[2, :]
-            output = network_data[3, :]
         else:
             network_data = model(network_input)
-            net_input = network_data[0]
-            cnn_hidden1 = network_data[1, :]
-            cnn_hidden2 = network_data[2, :]
-            output = network_data[3, :]
-
         # 训练数据和目标
-        train_input = network_input
-        train_target = cnn_hidden1
+        train_input = network_data[hidden_num-1]
+        train_target = network_data[hidden_num]
 
         bestIndividual = evolutionNAddLamdaCommon(args, train_input, train_target, indiv_dir, run_num, run_times, Minist_SR)
         # 保存此次种群演化最优的个体的表达式
         # 保存此次种群演化最优的个体的相关信息(表达式)
-        parallel_save_result(indiv_dir,bestIndividual, args.genNum, run_num, run_times)
+        parallel_save_result(indiv_dir, bestIndividual, args.genNum, run_num, run_times)
         break
 
-    # 在模型上添加参数
     if bestIndividual is None:
         raise ValueError("Individual is none")
-    mnist_sr_weight = MnistSRWithWeight(bestIndividual)
-    print(mnist_sr_weight.named_parameters())
+    # 在模型上添加参数
+    model_weight = MnistSRWithWeight(bestIndividual)
+    print(model_weight.named_parameters())
+
     if torch.cuda.is_available():
-        mnist_sr_weight = mnist_sr_weight.cuda()
+        model_weight = model_weight.cuda()
     criterion = nn.L1Loss() # Loss 函数的定义，交叉熵
-    optimizer = torch.optim.SGD(mnist_sr_weight.parameters(), lr=0.001, momentum=0.9)  # 定义优化器，普通的随机梯度下降算法
-    for batch_idx, (data, target) in enumerate(sr_data.train_loader):
-        if torch.cuda.is_available():
-            network_input = network_input.cuda()
-            network_data = model(network_input)
-            net_input = network_data[0]
-            cnn_hidden1 = network_data[1, :]
-            cnn_hidden2 = network_data[2, :]
-            output = network_data[3, :]
-        else:
-            network_data = model(network_input)
-            net_input = network_data[0]
-            cnn_hidden1 = network_data[1, :]
-            cnn_hidden2 = network_data[2, :]
-            output = network_data[3, :]
+    optimizer = torch.optim.SGD(model_weight.parameters(), lr=0.001, momentum=0.9)  # 定义优化器，普通的随机梯度下降算法
 
-        # 训练数据和目标
-        train_input = network_input
-        train_target = cnn_hidden1
+    for epoch in range(epoch_num):
+        for batch_idx, (data, target) in enumerate(sr_data.train_loader):
+            if torch.cuda.is_available():
+                network_input = network_input.cuda()
+                network_data = model(network_input)
+            else:
+                network_data = model(network_input)
 
-        predict = mnist_sr_weight(train_input)
-        # print(predict)
+            # 训练数据和目标
+            train_input = network_data[hidden_num - 1]
+            train_target = network_data[hidden_num]
 
-        loss = criterion(predict, train_target)
-        loss.backward()
-        optimizer.step()
-        optimizer.zero_grad()
-        if batch_idx % 50 == 0:
-            print(loss.data.cpu())
-        # print(batch_idx)
+            predict = model_weight(train_input)
+            # print(predict)
+
+            loss = criterion(predict, train_target)
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+            # if batch_idx % 500 == 0:
+            #     print("batch_idx {}:".format(batch_idx), loss.data.cpu())
+
+
+            # print(batch_idx)
+        if (epoch % 50 == 0):
+            print("epoch {}:".format(epoch), loss.data.cpu())
+        if (epoch % checkpoint_interval == 0):
+            fname = str(model_weight)
+            torch.save(model_weight.state_dict(), f"{indiv_dir}{fname}.pth")
 
