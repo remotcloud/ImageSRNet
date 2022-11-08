@@ -14,8 +14,8 @@ import torchvision.datasets as dsets
 import torchvision.transforms as transforms
 # from ImageSRNet.image_functions import default_functions
 # from ImageSRNet.sr_objs import ImageCGP
-from image_functions import default_functions
-from sr_objs import ImageCGP
+from ImageSRNet.image_functions import default_functions
+from ImageSRNet.sr_objs import ImageCGP
 
 import _pickle as pickle
 from joblib import Parallel, delayed

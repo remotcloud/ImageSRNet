@@ -12,8 +12,8 @@ from torch import nn
 # from ImageSRNet.image_functions import default_functions
 # from ImageSRNet.utils import ImageCGPParameters, create_icgp_genes_bounds, get_active_paths, create_func_params_list, \
 #     CGPParameters, create_genes_and_bounds, create_nodes, get_active_paths_by_nodes
-from image_functions import default_functions
-from utils import ImageCGPParameters, create_icgp_genes_bounds, get_active_paths, create_func_params_list, \
+from ImageSRNet.image_functions import default_functions
+from ImageSRNet.utils import ImageCGPParameters, create_icgp_genes_bounds, get_active_paths, create_func_params_list, \
     CGPParameters, create_genes_and_bounds, create_nodes, get_active_paths_by_nodes
 
 """

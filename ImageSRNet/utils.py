@@ -11,7 +11,7 @@ from torch.utils.data import Dataset
 
 # from ImageSRNet.image_functions import function_map
 # from data_utils import io
-from image_functions import function_map
+from ImageSRNet.image_functions import function_map
 # from data_utils import io
 
 class CGPParameters:

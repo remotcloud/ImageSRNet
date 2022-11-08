@@ -9,8 +9,8 @@ from torch import nn
 
 # from ImageSRNet.image_functions import default_functions
 # from ImageSRNet.sr_objs import ImageCGP, CGPLayer
-from image_functions import default_functions
-from sr_objs import ImageCGP, CGPLayer
+from ImageSRNet.image_functions import default_functions
+from ImageSRNet.sr_objs import ImageCGP, CGPLayer
 
 class CNNCGPNet(nn.Module):
     # wrap of the ImageCGPNet and CGPNet for explaining CNN model
