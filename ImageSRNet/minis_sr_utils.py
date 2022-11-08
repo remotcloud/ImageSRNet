@@ -1,6 +1,6 @@
 import math
 import os
-import pickle
+import _pickle as pickle
 import traceback
 import json
 import torch
@@ -10,10 +10,10 @@ from torch.utils.tensorboard import SummaryWriter
 
 import torchvision.datasets as dsets
 import torchvision.transforms as transforms
-from loss import *
+from ImageSRNet.loss import *
 from matplotlib import pyplot as plt
 
-from Minist_imageCGP import ConvNet
+from ImageSRNet.Minist_imageCGP import ConvNet
 
 
 class DataSetManager(object):
@@ -21,11 +21,12 @@ class DataSetManager(object):
         if update_network_data:
             self.network_dataSet = self.__save_network_data_to_pickle(120)
         else:
-            self.network_dataSet = self.__getDataPickle('data/network_data.pkl')
+            print(__file__)
+            self.network_dataSet = self.__getDataPickle(__file__+'/../data/network_data.pkl')
         if update_raw_data:
             self.raw_mnist_data = self.__save_raw_data_to_pickle(120)
         else:
-            self.raw_mnist_data = self.__getDataPickle('data/raw_mnist_data.pkl')
+            self.raw_mnist_data = self.__getDataPickle(__file__+'/../data/raw_mnist_data.pkl')
 
         self.bestIndividual = best_individual
 
@@ -170,7 +171,7 @@ class DataSetManager(object):
         print("Save json ok!")
 
 
-def get_data(batch_size):
+def get_data(batch_size, data_dir = './data'):
     '''
     获取手写数识别的数据加载器，训练、验证、测试的loader
     :param batch_size:
@@ -178,13 +179,13 @@ def get_data(batch_size):
     '''
     # 加载MNIST数据 MNIST数据属于 torchvision 包自带的数据,可以直接接调用
     # 当用户想调用自己的图俱数据时，可以用torchvision.datasets.ImageFolder或torch.utils.data. TensorDataset来加载
-    train_dataset = dsets.MNIST(root='./data',  # 文件存放路径
+    train_dataset = dsets.MNIST(root= data_dir,  # 文件存放路径
                                 train=True,  # 提取训练集
                                 # 将图像转化为 Tensor，在加载數据时，就可以对图像做预处理
                                 transform=transforms.ToTensor(),
                                 download=True)  # 当找不到文件的时候，自动下載
     # 加载测试数据集
-    test_dataset = dsets.MNIST(root='./data',
+    test_dataset = dsets.MNIST(root= data_dir,
                                train=False,
                                transform=transforms.ToTensor())
 
@@ -255,8 +256,8 @@ def evolutionNAddLamdaCommon(evlutionParam, input, target, indiv_dir, run_num, i
     # 寻找当代最优个体，并且记录了该个体
     best_individual = min(population, key=lambda x: x.fitness)
 
-    with open(indiv_dir, "a") as f:
-        f.write(str(0) + " " + str(best_individual.fitness) + "\n")
+    # with open(indiv_dir, "a") as f:
+    #     f.write(str(0) + " " + str(best_individual.fitness) + "\n")
     # 下一代种群
     newPopulation = [i for i in range(0, populationSize)]
 
